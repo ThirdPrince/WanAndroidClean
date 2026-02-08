@@ -23,4 +23,4 @@ rootProject.name = "WanAndroidClean"
 include(":app")
 include(":domain")
 include(":data")
-include(":presentation")
+include(":feature:home")

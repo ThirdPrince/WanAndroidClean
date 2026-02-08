@@ -4,8 +4,8 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import com.sample.wanandroidclean.presentation.articles.ArticlesScreen
-import com.sample.wanandroidclean.presentation.ui.theme.WanAndroidCleanTheme
+import com.sample.wanandroidclean.feature.home.ui.theme.WanAndroidCleanTheme
+import com.sample.wanandroidclean.ui.MainScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -13,7 +13,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             WanAndroidCleanTheme {
-                ArticlesScreen()
+                MainScreen()
             }
         }
     }

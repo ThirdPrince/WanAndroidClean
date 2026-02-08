@@ -42,13 +42,17 @@ android {
 }
 
 dependencies {
-    implementation(project(":presentation"))
+    implementation(project(":feature:home"))
     implementation(project(":data"))
     implementation(project(":domain"))
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.compose.material3)
+
+    // Navigation
+    implementation(libs.navigation.compose)
 
     // Koin
     implementation(libs.koin.android)
