@@ -11,5 +11,5 @@ class GetBannersUseCase(private val bannerRepository: BannerRepository) {
     /**
      * Executes the use case.
      */
-    suspend operator fun invoke(): List<Banner> = bannerRepository.getBanners()
+    suspend operator fun invoke(): Result<List<Banner>> = bannerRepository.getBanners()
 }

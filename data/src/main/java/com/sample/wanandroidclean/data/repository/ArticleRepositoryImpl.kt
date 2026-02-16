@@ -1,6 +1,7 @@
 package com.sample.wanandroidclean.data.repository
 
 import com.sample.wanandroidclean.data.remote.WanAndroidApi
+import com.sample.wanandroidclean.data.remote.safeApiCall
 import com.sample.wanandroidclean.domain.entity.Article
 import com.sample.wanandroidclean.domain.repository.ArticleRepository
 
@@ -9,8 +10,11 @@ import com.sample.wanandroidclean.domain.repository.ArticleRepository
  */
 class ArticleRepositoryImpl(private val wanAndroidApi: WanAndroidApi) : ArticleRepository {
 
-    override suspend fun getArticles(): List<Article> {
+    override suspend fun getArticles(): Result<List<Article>> {
         // TODO: This should be updated to support pagination
-        return wanAndroidApi.getArticles(0).data.datas.map { it.toDomain() }
+        val articleDataResult = safeApiCall { wanAndroidApi.getArticles(0) }
+        return articleDataResult.map { articleData ->
+            articleData.datas.map { it.toDomain() }
+        }
     }
 }

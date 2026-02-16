@@ -1,7 +1,9 @@
 package com.sample.wanandroidclean.data.remote
 
-import com.sample.wanandroidclean.data.model.ArticleResponse
-import com.sample.wanandroidclean.data.model.BannerResponse
+import com.sample.wanandroidclean.data.model.ArticleData
+import com.sample.wanandroidclean.data.model.BannerDto
+import com.sample.wanandroidclean.data.model.BaseResponse
+import retrofit2.Response
 import retrofit2.http.GET
 import retrofit2.http.Path
 
@@ -11,8 +13,8 @@ import retrofit2.http.Path
 interface WanAndroidApi {
 
     @GET("article/list/{page}/json")
-    suspend fun getArticles(@Path("page") page: Int): ArticleResponse
+    suspend fun getArticles(@Path("page") page: Int): BaseResponse<ArticleData>
 
     @GET("banner/json")
-    suspend fun getBanners(): BannerResponse
+    suspend fun getBanners(): BaseResponse<List<BannerDto>>
 }

@@ -10,5 +10,5 @@ interface BannerRepository {
     /**
      * Fetches the list of banners from the data source.
      */
-    suspend fun getBanners(): List<Banner>
+    suspend fun getBanners(): Result<List<Banner>>
 }

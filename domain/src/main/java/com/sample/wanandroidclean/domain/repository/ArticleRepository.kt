@@ -10,5 +10,5 @@ interface ArticleRepository {
     /**
      * Fetches the list of articles from the data source.
      */
-    suspend fun getArticles(): List<Article>
+    suspend fun getArticles(): Result<List<Article>>
 }

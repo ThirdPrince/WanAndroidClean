@@ -28,13 +28,18 @@ class ArticlesViewModel(
 
     private fun loadArticles() {
         viewModelScope.launch {
-            _articles.value = getArticlesUseCase()
+            getArticlesUseCase().onSuccess {
+                _articles.value = it
+
+            }
         }
     }
 
     private fun loadBanners() {
         viewModelScope.launch {
-            _banners.value = getBannersUseCase()
+            getBannersUseCase().onSuccess {
+                _banners.value = it
+            }
         }
     }
 }
