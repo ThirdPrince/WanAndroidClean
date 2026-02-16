@@ -15,6 +15,7 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -24,6 +25,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -37,21 +39,26 @@ import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun ArticlesScreen(viewModel: ArticlesViewModel = koinViewModel()) {
-    val articles by viewModel.articles.collectAsStateWithLifecycle()
-    val banners by viewModel.banners.collectAsStateWithLifecycle()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    LazyColumn(
-        modifier = Modifier.fillMaxSize().padding(horizontal = 8.dp)
-    ) {
-        if (banners.isNotEmpty()) {
-            item {
-                BannerPager(banners = banners)
-            }
+    if (uiState.isLoading) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator()
         }
+    } else {
+        LazyColumn(
+            modifier = Modifier.fillMaxSize().padding(horizontal = 8.dp)
+        ) {
+            if (uiState.banners.isNotEmpty()) {
+                item {
+                    BannerPager(banners = uiState.banners)
+                }
+            }
 
-        items(articles) { article ->
-            ArticleItem(article = article, modifier = Modifier.fillMaxWidth())
-            Divider(color = Color.LightGray, thickness = 0.5.dp)
+            items(uiState.articles) { article ->
+                ArticleItem(article = article, modifier = Modifier.fillMaxWidth())
+                Divider(color = Color.LightGray, thickness = 0.5.dp)
+            }
         }
     }
 }

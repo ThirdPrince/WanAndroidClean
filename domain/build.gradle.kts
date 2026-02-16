@@ -3,6 +3,9 @@ plugins {
 }
 
 dependencies {
+    // Coroutines
+    implementation(libs.kotlinx.coroutines.core)
+
     // Koin for dependency injection
     implementation(libs.koin.core)
 }
