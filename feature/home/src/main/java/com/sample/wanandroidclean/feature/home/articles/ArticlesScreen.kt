@@ -15,13 +15,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sample.wanandroidclean.domain.entity.Article
 import com.sample.wanandroidclean.feature.home.articles.ArticlesViewModel
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun ArticlesScreen(viewModel: ArticlesViewModel = koinViewModel()) {
-    val articles by viewModel.articles.collectAsState()
+    val articles by viewModel.articles.collectAsStateWithLifecycle()
     ArticlesList(articles = articles, modifier = Modifier.fillMaxSize())
 }
 
