@@ -7,5 +7,6 @@ data class Article(
     val id: Int,
     val title: String,
     val author: String,
+    val shareUser: String,
     val link: String
 )

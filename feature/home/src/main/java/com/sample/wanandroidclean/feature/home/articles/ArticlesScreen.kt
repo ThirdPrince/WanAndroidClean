@@ -52,8 +52,10 @@ fun ArticleItem(article: Article, modifier: Modifier = Modifier) {
                 style = MaterialTheme.typography.titleMedium
             )
             Spacer(modifier = Modifier.height(8.dp))
+            
+            val authorText = article.author.ifEmpty { article.shareUser }
             Text(
-                text = "Author: ${article.author}",
+                text = "$authorText",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
