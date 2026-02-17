@@ -8,6 +8,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.sample.wanandroidclean.feature.home.articles.ArticlesScreen
+import com.sample.wanandroidclean.feature.system.SystemScreen
 
 @Composable
 fun MainScreen() {
@@ -22,7 +23,7 @@ fun MainScreen() {
             modifier = Modifier.padding(innerPadding)
         ) {
             composable(NavigationItem.Home.route) { ArticlesScreen() }
-            composable(NavigationItem.System.route) { /* TODO: System Screen */ }
+            composable(NavigationItem.System.route) { SystemScreen() }
             composable(NavigationItem.Project.route) { /* TODO: Project Screen */ }
             composable(NavigationItem.Collection.route) { /* TODO: Collection Screen */ }
         }

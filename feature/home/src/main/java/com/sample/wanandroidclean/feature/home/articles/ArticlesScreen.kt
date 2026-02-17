@@ -3,7 +3,6 @@ package com.sample.wanandroidclean.feature.home.articles
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.collectIsDraggedAsState
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -135,7 +134,7 @@ fun ArticleItem(article: Article, modifier: Modifier = Modifier) {
                     }
                     Spacer(modifier = Modifier.width(8.dp))
                 }
-                val authorText = if (article.author.isNotEmpty()) article.author else article.shareUser
+                val authorText = article.author.ifEmpty { article.shareUser }
                 Text(
                     text = "Author: $authorText",
                     style = MaterialTheme.typography.bodySmall,
