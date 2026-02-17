@@ -5,5 +5,5 @@ import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.dsl.module
 
 val systemModule = module {
-    viewModel { SystemViewModel(get()) }
+    viewModel { SystemViewModel(get(), get()) }
 }
