@@ -15,7 +15,8 @@ data class HomeScreenData(
 
 /**
  * Use case for getting the combined data for the home screen (banners and articles).
- * It fetches them in parallel and returns a success result even if one of them fails.
+ * It fetches them in parallel.
+ * It returns a failure only if BOTH requests fail. Otherwise, it returns a partial success.
  */
 class GetHomeScreenDataUseCase(
     private val bannerRepository: BannerRepository,
@@ -29,13 +30,18 @@ class GetHomeScreenDataUseCase(
         val bannersResult = bannersDeferred.await()
         val articlesResult = articlesDeferred.await()
 
-        // Create the data object with successful results, leaving failed ones as null
-        val homeScreenData = HomeScreenData(
-            banners = bannersResult.getOrNull(),
-            articles = articlesResult.getOrNull()
-        )
-
-        // Always return success, as the partial data is still useful for the UI.
-        Result.success(homeScreenData)
+        // If both requests fail, the entire operation is a failure.
+        if (bannersResult.isFailure && articlesResult.isFailure) {
+            // Return the first encountered exception.
+            val exception = bannersResult.exceptionOrNull() ?: articlesResult.exceptionOrNull() ?: Exception("Unknown error")
+            Result.failure(exception)
+        } else {
+            // Otherwise, it's a success, even if it's a partial success.
+            val homeScreenData = HomeScreenData(
+                banners = bannersResult.getOrNull(),
+                articles = articlesResult.getOrNull()
+            )
+            Result.success(homeScreenData)
+        }
     }
 }
