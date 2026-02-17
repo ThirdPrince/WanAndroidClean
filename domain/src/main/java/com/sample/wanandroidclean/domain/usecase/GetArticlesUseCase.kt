@@ -11,5 +11,5 @@ class GetArticlesUseCase(private val articleRepository: ArticleRepository) {
     /**
      * Executes the use case.
      */
-    suspend operator fun invoke(): Result<List<Article>> = articleRepository.getArticles()
+    suspend operator fun invoke(): Result<List<Article>> = articleRepository.getArticles(0)
 }

@@ -11,11 +11,12 @@ data class ArticleDto(
     val shareUser: String,
     val link: String
 ) {
-    fun toDomain(): Article = Article(
+    fun toDomain(isTop: Boolean = false): Article = Article(
         id = id,
         title = title,
         author = author,
         shareUser = shareUser,
-        link = link
+        link = link,
+        isTop = isTop
     )
 }

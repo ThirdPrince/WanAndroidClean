@@ -4,6 +4,7 @@ import com.sample.wanandroidclean.domain.entity.Article
 import com.sample.wanandroidclean.domain.entity.Banner
 import com.sample.wanandroidclean.domain.repository.ArticleRepository
 import com.sample.wanandroidclean.domain.repository.BannerRepository
+import com.sample.wanandroidclean.domain.repository.TopArticleRepository
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 
@@ -14,32 +15,36 @@ data class HomeScreenData(
 )
 
 /**
- * Use case for getting the combined data for the home screen (banners and articles).
- * It fetches them in parallel.
- * It returns a failure only if BOTH requests fail. Otherwise, it returns a partial success.
+ * Use case for getting the combined data for the home screen.
+ * It fetches banners, top articles, and normal articles in parallel.
  */
 class GetHomeScreenDataUseCase(
     private val bannerRepository: BannerRepository,
+    private val topArticleRepository: TopArticleRepository,
     private val articleRepository: ArticleRepository
 ) {
 
     suspend operator fun invoke(): Result<HomeScreenData> = coroutineScope {
         val bannersDeferred = async { bannerRepository.getBanners() }
-        val articlesDeferred = async { articleRepository.getArticles() }
+        val topArticlesDeferred = async { topArticleRepository.getTopArticles() }
+        val normalArticlesDeferred = async { articleRepository.getArticles(0) } // Page 0 for now
 
         val bannersResult = bannersDeferred.await()
-        val articlesResult = articlesDeferred.await()
+        val topArticlesResult = topArticlesDeferred.await()
+        val normalArticlesResult = normalArticlesDeferred.await()
+        
+        val topArticles = topArticlesResult.getOrNull() ?: emptyList()
+        val normalArticles = normalArticlesResult.getOrNull() ?: emptyList()
+        val combinedArticles = topArticles + normalArticles
 
-        // If both requests fail, the entire operation is a failure.
-        if (bannersResult.isFailure && articlesResult.isFailure) {
-            // Return the first encountered exception.
-            val exception = bannersResult.exceptionOrNull() ?: articlesResult.exceptionOrNull() ?: Exception("Unknown error")
+        // If all requests fail, the entire operation is a failure.
+        if (bannersResult.isFailure && topArticlesResult.isFailure && normalArticlesResult.isFailure) {
+            val exception = bannersResult.exceptionOrNull() ?: Exception("Unknown error")
             Result.failure(exception)
         } else {
-            // Otherwise, it's a success, even if it's a partial success.
             val homeScreenData = HomeScreenData(
                 banners = bannersResult.getOrNull(),
-                articles = articlesResult.getOrNull()
+                articles = combinedArticles.ifEmpty { null }
             )
             Result.success(homeScreenData)
         }

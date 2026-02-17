@@ -18,11 +18,15 @@ android {
     }
     kotlinOptions {
         jvmTarget = "1.8"
+        freeCompilerArgs = listOf("-Xopt-in=kotlinx.serialization.ExperimentalSerializationApi")
     }
 }
 
 dependencies {
     implementation(project(":domain"))
+
+    // Coroutines
+    implementation(libs.kotlinx.coroutines.core)
 
     // Koin
     implementation(libs.koin.core)

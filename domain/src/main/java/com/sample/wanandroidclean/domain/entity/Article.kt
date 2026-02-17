@@ -8,5 +8,6 @@ data class Article(
     val title: String,
     val author: String,
     val shareUser: String,
-    val link: String
+    val link: String,
+    val isTop: Boolean = false
 )

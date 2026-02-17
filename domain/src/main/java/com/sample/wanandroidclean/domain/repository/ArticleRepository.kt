@@ -8,7 +8,7 @@ import com.sample.wanandroidclean.domain.entity.Article
 interface ArticleRepository {
 
     /**
-     * Fetches the list of articles from the data source.
+     * Fetches a single page of articles from the data source.
      */
-    suspend fun getArticles(): Result<List<Article>>
+    suspend fun getArticles(page: Int): Result<List<Article>>
 }
