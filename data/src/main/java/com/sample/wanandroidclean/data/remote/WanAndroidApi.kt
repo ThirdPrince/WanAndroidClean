@@ -6,6 +6,7 @@ import com.sample.wanandroidclean.data.model.BannerDto
 import com.sample.wanandroidclean.data.model.BaseResponse
 import com.sample.wanandroidclean.data.model.NavigationDto
 import com.sample.wanandroidclean.data.model.SystemCategoryDto
+import com.sample.wanandroidclean.data.model.WxChapterDto
 import retrofit2.http.GET
 import retrofit2.http.Path
 
@@ -24,8 +25,14 @@ interface WanAndroidApi {
     suspend fun getBanners(): BaseResponse<List<BannerDto>>
 
     @GET("tree/json")
-    suspend fun getSystemCategories():BaseResponse<List<SystemCategoryDto>>
+    suspend fun getSystemCategories(): BaseResponse<List<SystemCategoryDto>>
 
     @GET("navi/json")
     suspend fun getNavigation(): BaseResponse<List<NavigationDto>>
+
+    @GET("wxarticle/chapters/json")
+    suspend fun getWxChapters(): BaseResponse<List<WxChapterDto>>
+
+    @GET("wxarticle/list/{chapterId}/{page}/json")
+    suspend fun getWxArticles(@Path("chapterId") chapterId: Int, @Path("page") page: Int): BaseResponse<ArticleData>
 }

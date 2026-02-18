@@ -44,6 +44,7 @@ android {
 dependencies {
     implementation(project(":feature:home"))
     implementation(project(":feature:system"))
+    implementation(project(":feature:wxarticle"))
     implementation(project(":data"))
     implementation(project(":domain"))
 
@@ -51,6 +52,7 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.compose.material3)
+    implementation(libs.androidx.splashscreen)
 
     // Navigation
     implementation(libs.navigation.compose)
