@@ -14,6 +14,7 @@ fun BottomNavigationBar(navController: NavController) {
     val items = listOf(
         NavigationItem.Home,
         NavigationItem.System,
+        NavigationItem.WxArticle,
         NavigationItem.Project,
         NavigationItem.Collection
     )
