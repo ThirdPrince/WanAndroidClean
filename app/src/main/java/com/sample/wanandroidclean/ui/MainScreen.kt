@@ -8,6 +8,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.sample.wanandroidclean.feature.home.articles.ArticlesScreen
+import com.sample.wanandroidclean.feature.project.ProjectScreen
 import com.sample.wanandroidclean.feature.system.SystemScreen
 import com.sample.wanandroidclean.feature.wxarticle.WxArticleScreen
 
@@ -26,7 +27,7 @@ fun MainScreen() {
             composable(NavigationItem.Home.route) { ArticlesScreen() }
             composable(NavigationItem.System.route) { SystemScreen() }
             composable(NavigationItem.WxArticle.route) { WxArticleScreen() }
-            composable(NavigationItem.Project.route) { /* TODO: Project Screen */ }
+            composable(NavigationItem.Project.route) { ProjectScreen() }
             composable(NavigationItem.Collection.route) { /* TODO: Collection Screen */ }
         }
     }

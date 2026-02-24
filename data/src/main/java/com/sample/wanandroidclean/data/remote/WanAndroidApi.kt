@@ -5,6 +5,7 @@ import com.sample.wanandroidclean.data.model.ArticleDto
 import com.sample.wanandroidclean.data.model.BannerDto
 import com.sample.wanandroidclean.data.model.BaseResponse
 import com.sample.wanandroidclean.data.model.NavigationDto
+import com.sample.wanandroidclean.data.model.ProjectChapterDto
 import com.sample.wanandroidclean.data.model.SystemCategoryDto
 import com.sample.wanandroidclean.data.model.WxChapterDto
 import retrofit2.http.GET
@@ -35,4 +36,7 @@ interface WanAndroidApi {
 
     @GET("wxarticle/list/{chapterId}/{page}/json")
     suspend fun getWxArticles(@Path("chapterId") chapterId: Int, @Path("page") page: Int): BaseResponse<ArticleData>
+
+    @GET("project/tree/json")
+    suspend fun getProjectChapters(): BaseResponse<List<ProjectChapterDto>>
 }

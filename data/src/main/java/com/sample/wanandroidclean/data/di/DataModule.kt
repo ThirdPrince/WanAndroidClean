@@ -5,12 +5,14 @@ import com.sample.wanandroidclean.data.remote.WanAndroidApi
 import com.sample.wanandroidclean.data.repository.ArticleRepositoryImpl
 import com.sample.wanandroidclean.data.repository.BannerRepositoryImpl
 import com.sample.wanandroidclean.data.repository.NavigationRepositoryImpl
+import com.sample.wanandroidclean.data.repository.ProjectRepositoryImpl
 import com.sample.wanandroidclean.data.repository.SystemRepositoryImpl
 import com.sample.wanandroidclean.data.repository.TopArticleRepositoryImpl
 import com.sample.wanandroidclean.data.repository.WxArticleRepositoryImpl
 import com.sample.wanandroidclean.domain.repository.ArticleRepository
 import com.sample.wanandroidclean.domain.repository.BannerRepository
 import com.sample.wanandroidclean.domain.repository.NavigationRepository
+import com.sample.wanandroidclean.domain.repository.ProjectRepository
 import com.sample.wanandroidclean.domain.repository.SystemRepository
 import com.sample.wanandroidclean.domain.repository.TopArticleRepository
 import com.sample.wanandroidclean.domain.repository.WxArticleRepository
@@ -26,6 +28,7 @@ val dataModule = module {
     single<SystemRepository> { SystemRepositoryImpl(get()) }
     single<NavigationRepository> { NavigationRepositoryImpl(get()) }
     single<WxArticleRepository> { WxArticleRepositoryImpl(get()) }
+    single<ProjectRepository> { ProjectRepositoryImpl(get()) }
 
     single<WanAndroidApi> {
         val retrofit = get<Retrofit>()
