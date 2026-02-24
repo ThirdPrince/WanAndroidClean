@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sample.wanandroidclean.domain.entity.Article
 import com.sample.wanandroidclean.domain.entity.ProjectChapter
+import com.sample.wanandroidclean.domain.usecase.GetProjectArticlesUseCase
 import com.sample.wanandroidclean.domain.usecase.GetProjectChaptersUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -18,8 +19,8 @@ data class ProjectUiState(
 )
 
 class ProjectViewModel(
-    private val getProjectChaptersUseCase: GetProjectChaptersUseCase
-    // We will need a use case to get articles for a project chapter later
+    private val getProjectChaptersUseCase: GetProjectChaptersUseCase,
+    private val getProjectArticlesUseCase: GetProjectArticlesUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ProjectUiState())
@@ -33,9 +34,12 @@ class ProjectViewModel(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, error = null) }
             getProjectChaptersUseCase().fold(
-                onSuccess = {
+                onSuccess = { chapters ->
                     _uiState.update { currentState ->
-                        currentState.copy(isLoading = false, chapters = it)
+                        currentState.copy(isLoading = false, chapters = chapters)
+                    }
+                    if (chapters.isNotEmpty()) {
+                        loadArticlesForChapter(chapters.first().id)
                     }
                 },
                 onFailure = { e ->
@@ -47,6 +51,18 @@ class ProjectViewModel(
                     }
                 }
             )
+        }
+    }
+
+    fun loadArticlesForChapter(chapterId: Int, page: Int = 1) {
+        viewModelScope.launch {
+            getProjectArticlesUseCase(page, chapterId).onSuccess { articles ->
+                _uiState.update { currentState ->
+                    val newArticlesMap = currentState.articles.toMutableMap()
+                    newArticlesMap[chapterId] = articles
+                    currentState.copy(articles = newArticlesMap)
+                }
+            }
         }
     }
 }

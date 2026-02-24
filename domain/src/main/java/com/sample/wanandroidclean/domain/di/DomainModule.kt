@@ -2,6 +2,7 @@ package com.sample.wanandroidclean.domain.di
 
 import com.sample.wanandroidclean.domain.usecase.GetHomeScreenDataUseCase
 import com.sample.wanandroidclean.domain.usecase.GetNavigationUseCase
+import com.sample.wanandroidclean.domain.usecase.GetProjectArticlesUseCase
 import com.sample.wanandroidclean.domain.usecase.GetProjectChaptersUseCase
 import com.sample.wanandroidclean.domain.usecase.GetSystemCategoriesUseCase
 import com.sample.wanandroidclean.domain.usecase.GetWxArticlesUseCase
@@ -15,4 +16,5 @@ val domainModule = module {
     factory { GetWxChaptersUseCase(get()) }
     factory { GetWxArticlesUseCase(get()) }
     factory { GetProjectChaptersUseCase(get()) }
+    factory { GetProjectArticlesUseCase(get()) }
 }

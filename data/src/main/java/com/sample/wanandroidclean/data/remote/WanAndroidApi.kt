@@ -10,6 +10,7 @@ import com.sample.wanandroidclean.data.model.SystemCategoryDto
 import com.sample.wanandroidclean.data.model.WxChapterDto
 import retrofit2.http.GET
 import retrofit2.http.Path
+import retrofit2.http.Query
 
 /**
  * Defines the API for WanAndroid.
@@ -39,4 +40,7 @@ interface WanAndroidApi {
 
     @GET("project/tree/json")
     suspend fun getProjectChapters(): BaseResponse<List<ProjectChapterDto>>
+
+    @GET("project/list/{page}/json")
+    suspend fun getProjectArticles(@Path("page") page: Int, @Query("cid") cid: Int): BaseResponse<ArticleData>
 }
