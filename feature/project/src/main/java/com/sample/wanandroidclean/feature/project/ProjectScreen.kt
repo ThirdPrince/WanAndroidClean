@@ -91,7 +91,6 @@ fun ArticlesList(articles: List<Article>, modifier: Modifier = Modifier) {
     LazyColumn(modifier = modifier) {
         items(articles) { article ->
             ArticleItem(article = article, modifier = Modifier.fillMaxWidth())
-            Divider(color = Color.LightGray, thickness = 0.5.dp)
         }
     }
 }
@@ -100,7 +99,7 @@ fun ArticlesList(articles: List<Article>, modifier: Modifier = Modifier) {
 fun ArticleItem(article: Article, modifier: Modifier = Modifier) {
     Card(
         modifier = modifier
-            .padding(vertical = 8.dp),
+            .padding(vertical = 5.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(

@@ -4,6 +4,7 @@ import android.app.Application
 import com.sample.wanandroidclean.data.di.dataModule
 import com.sample.wanandroidclean.domain.di.domainModule
 import com.sample.wanandroidclean.feature.home.di.homeModule
+import com.sample.wanandroidclean.feature.mine.di.mineModule
 import com.sample.wanandroidclean.feature.project.di.projectModule
 import com.sample.wanandroidclean.feature.system.di.systemModule
 import com.sample.wanandroidclean.feature.wxarticle.di.wxArticleModule
@@ -17,7 +18,7 @@ class WanAndroidApp : Application() {
 
         startKoin {
             androidContext(this@WanAndroidApp)
-            modules(dataModule, domainModule, homeModule, systemModule, wxArticleModule, projectModule)
+            modules(dataModule, domainModule, homeModule, systemModule, wxArticleModule, projectModule, mineModule)
         }
     }
 }

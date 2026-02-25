@@ -8,6 +8,7 @@ import com.sample.wanandroidclean.data.repository.NavigationRepositoryImpl
 import com.sample.wanandroidclean.data.repository.ProjectRepositoryImpl
 import com.sample.wanandroidclean.data.repository.SystemRepositoryImpl
 import com.sample.wanandroidclean.data.repository.TopArticleRepositoryImpl
+import com.sample.wanandroidclean.data.repository.UserInfoRepositoryImpl
 import com.sample.wanandroidclean.data.repository.WxArticleRepositoryImpl
 import com.sample.wanandroidclean.domain.repository.ArticleRepository
 import com.sample.wanandroidclean.domain.repository.BannerRepository
@@ -15,6 +16,7 @@ import com.sample.wanandroidclean.domain.repository.NavigationRepository
 import com.sample.wanandroidclean.domain.repository.ProjectRepository
 import com.sample.wanandroidclean.domain.repository.SystemRepository
 import com.sample.wanandroidclean.domain.repository.TopArticleRepository
+import com.sample.wanandroidclean.domain.repository.UserInfoRepository
 import com.sample.wanandroidclean.domain.repository.WxArticleRepository
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
@@ -29,6 +31,7 @@ val dataModule = module {
     single<NavigationRepository> { NavigationRepositoryImpl(get()) }
     single<WxArticleRepository> { WxArticleRepositoryImpl(get()) }
     single<ProjectRepository> { ProjectRepositoryImpl(get()) }
+    single<UserInfoRepository> { UserInfoRepositoryImpl(get()) }
 
     single<WanAndroidApi> {
         val retrofit = get<Retrofit>()

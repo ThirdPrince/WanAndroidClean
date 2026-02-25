@@ -7,6 +7,7 @@ import com.sample.wanandroidclean.data.model.BaseResponse
 import com.sample.wanandroidclean.data.model.NavigationDto
 import com.sample.wanandroidclean.data.model.ProjectChapterDto
 import com.sample.wanandroidclean.data.model.SystemCategoryDto
+import com.sample.wanandroidclean.data.model.UserInfoDto
 import com.sample.wanandroidclean.data.model.WxChapterDto
 import retrofit2.http.GET
 import retrofit2.http.Path
@@ -43,4 +44,7 @@ interface WanAndroidApi {
 
     @GET("project/list/{page}/json")
     suspend fun getProjectArticles(@Path("page") page: Int, @Query("cid") cid: Int): BaseResponse<ArticleData>
+    
+    @GET("coin/userinfo/json")
+    suspend fun getUserInfo(): BaseResponse<UserInfoDto>
 }

@@ -46,6 +46,7 @@ dependencies {
     implementation(project(":feature:system"))
     implementation(project(":feature:wxarticle"))
     implementation(project(":feature:project"))
+    implementation(project(":feature:mine"))
     implementation(project(":data"))
     implementation(project(":domain"))
 

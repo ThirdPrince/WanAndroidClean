@@ -16,7 +16,7 @@ fun BottomNavigationBar(navController: NavController) {
         NavigationItem.System,
         NavigationItem.WxArticle,
         NavigationItem.Project,
-        NavigationItem.Collection
+        NavigationItem.Mine
     )
 
     NavigationBar {
