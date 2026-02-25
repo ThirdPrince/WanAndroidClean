@@ -15,6 +15,7 @@
             <option value="$PROJECT_DIR$/domain" />
             <option value="$PROJECT_DIR$/feature" />
             <option value="$PROJECT_DIR$/feature/home" />
+            <option value="$PROJECT_DIR$/feature/mine" />
             <option value="$PROJECT_DIR$/feature/project" />
             <option value="$PROJECT_DIR$/feature/system" />
             <option value="$PROJECT_DIR$/feature/wxarticle" />

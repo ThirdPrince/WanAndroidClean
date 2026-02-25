@@ -8,6 +8,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.sample.wanandroidclean.feature.home.articles.ArticlesScreen
+import com.sample.wanandroidclean.feature.mine.LoginScreen
 import com.sample.wanandroidclean.feature.mine.MineScreen
 import com.sample.wanandroidclean.feature.project.ProjectScreen
 import com.sample.wanandroidclean.feature.system.SystemScreen
@@ -26,10 +27,22 @@ fun MainScreen() {
             modifier = Modifier.padding(innerPadding)
         ) {
             composable(NavigationItem.Home.route) { ArticlesScreen() }
-            composable(NavigationItem.System.route) { SystemScreen() }
+            composable(NavigationItem.System.route) { SystemCategoryListWrapper() }
             composable(NavigationItem.WxArticle.route) { WxArticleScreen() }
             composable(NavigationItem.Project.route) { ProjectScreen() }
-            composable(NavigationItem.Mine.route) { MineScreen() }
+            composable(NavigationItem.Mine.route) { 
+                MineScreen(onLoginClick = { navController.navigate("login") }) 
+            }
+            
+            composable("login") { 
+                LoginScreen(onBackClick = { navController.popBackStack() }) 
+            }
         }
     }
+}
+
+// A simple wrapper to provide SystemScreen until we have a better way to handle its dependencies
+@Composable
+fun SystemCategoryListWrapper() {
+    SystemScreen()
 }
