@@ -3,6 +3,9 @@ package com.sample.wanandroidclean.data.di
 import com.sample.wanandroidclean.data.remote.*
 import com.sample.wanandroidclean.data.repository.*
 import com.sample.wanandroidclean.domain.repository.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -13,7 +16,10 @@ import retrofit2.Retrofit
 import retrofit2.converter.kotlinx.serialization.asConverterFactory
 
 val dataModule = module {
-    single { CookieStorage(androidContext()) }
+    // Provide a global CoroutineScope for data tasks (like persisting cookies)
+    single { CoroutineScope(Dispatchers.IO + SupervisorJob()) }
+
+    single { CookieStorage(androidContext(), get()) }
     single { PersistentCookieJar(get()) }
 
     single {

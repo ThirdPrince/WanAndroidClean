@@ -7,8 +7,6 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import okhttp3.Cookie
@@ -19,10 +17,13 @@ private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(na
 
 /**
  * Optimized Cookie storage using DataStore with an in-memory cache to avoid blocking.
+ * The CoroutineScope is now injected for better testability and lifecycle management.
  */
-class CookieStorage(private val context: Context) {
+class CookieStorage(
+    private val context: Context,
+    private val scope: CoroutineScope
+) {
 
-    private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private val cookieCache = ConcurrentHashMap<String, List<Cookie>>()
 
     init {

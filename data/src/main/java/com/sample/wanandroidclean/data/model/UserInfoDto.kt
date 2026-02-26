@@ -1,9 +1,10 @@
 package com.sample.wanandroidclean.data.model
 
 import com.sample.wanandroidclean.domain.entity.UserInfo
+import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.Serializable
 
-/**
+@InternalSerializationApi /**
  * User data transfer object that is compatible with both login and coin info responses.
  */
 @Serializable
