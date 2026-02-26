@@ -7,6 +7,7 @@ import com.sample.wanandroidclean.domain.repository.*
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
+import okhttp3.logging.HttpLoggingInterceptor
 import org.koin.android.ext.koin.androidContext
 import org.koin.dsl.module
 import retrofit2.Retrofit
@@ -16,7 +17,12 @@ val dataModule = module {
     single { PersistentCookieJar(get()) }
 
     single {
+        val loggingInterceptor = HttpLoggingInterceptor().apply {
+            level = HttpLoggingInterceptor.Level.BODY
+        }
+        
         OkHttpClient.Builder()
+            .addInterceptor(loggingInterceptor)
             .cookieJar(get<PersistentCookieJar>())
             .build()
     }
