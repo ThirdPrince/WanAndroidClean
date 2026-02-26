@@ -1,17 +1,7 @@
 package com.sample.wanandroidclean.data.remote
 
-import com.sample.wanandroidclean.data.model.ArticleData
-import com.sample.wanandroidclean.data.model.ArticleDto
-import com.sample.wanandroidclean.data.model.BannerDto
-import com.sample.wanandroidclean.data.model.BaseResponse
-import com.sample.wanandroidclean.data.model.NavigationDto
-import com.sample.wanandroidclean.data.model.ProjectChapterDto
-import com.sample.wanandroidclean.data.model.SystemCategoryDto
-import com.sample.wanandroidclean.data.model.UserInfoDto
-import com.sample.wanandroidclean.data.model.WxChapterDto
-import retrofit2.http.GET
-import retrofit2.http.Path
-import retrofit2.http.Query
+import com.sample.wanandroidclean.data.model.*
+import retrofit2.http.*
 
 /**
  * Defines the API for WanAndroid.
@@ -47,4 +37,11 @@ interface WanAndroidApi {
     
     @GET("coin/userinfo/json")
     suspend fun getUserInfo(): BaseResponse<UserInfoDto>
+
+    @FormUrlEncoded
+    @POST("user/login")
+    suspend fun login(
+        @Field("username") username: String,
+        @Field("password") password: String
+    ): BaseResponse<UserInfoDto>
 }

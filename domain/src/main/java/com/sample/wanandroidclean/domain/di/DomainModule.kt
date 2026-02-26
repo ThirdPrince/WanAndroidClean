@@ -1,13 +1,6 @@
 package com.sample.wanandroidclean.domain.di
 
-import com.sample.wanandroidclean.domain.usecase.GetHomeScreenDataUseCase
-import com.sample.wanandroidclean.domain.usecase.GetNavigationUseCase
-import com.sample.wanandroidclean.domain.usecase.GetProjectArticlesUseCase
-import com.sample.wanandroidclean.domain.usecase.GetProjectChaptersUseCase
-import com.sample.wanandroidclean.domain.usecase.GetSystemCategoriesUseCase
-import com.sample.wanandroidclean.domain.usecase.GetUserInfoUseCase
-import com.sample.wanandroidclean.domain.usecase.GetWxArticlesUseCase
-import com.sample.wanandroidclean.domain.usecase.GetWxChaptersUseCase
+import com.sample.wanandroidclean.domain.usecase.*
 import org.koin.dsl.module
 
 val domainModule = module {
@@ -19,4 +12,5 @@ val domainModule = module {
     factory { GetProjectChaptersUseCase(get()) }
     factory { GetProjectArticlesUseCase(get()) }
     factory { GetUserInfoUseCase(get()) }
+    factory { LoginUseCase(get()) }
 }
