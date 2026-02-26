@@ -19,10 +19,8 @@ android {
     
     kotlinOptions {
         jvmTarget = "17"
-        freeCompilerArgs = freeCompilerArgs + listOf(
-            "-opt-in=kotlinx.serialization.ExperimentalSerializationApi",
-            "-opt-in=kotlinx.serialization.InternalSerializationApi"
-        )
+        freeCompilerArgs += listOf("-Xopt-in=kotlinx.serialization.InternalSerializationApi")
+
     }
 }
 

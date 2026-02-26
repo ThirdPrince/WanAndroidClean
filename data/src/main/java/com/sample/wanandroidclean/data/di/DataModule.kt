@@ -1,6 +1,5 @@
 package com.sample.wanandroidclean.data.di
 
-import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
 import com.sample.wanandroidclean.data.remote.*
 import com.sample.wanandroidclean.data.repository.*
 import com.sample.wanandroidclean.domain.repository.*
@@ -11,6 +10,7 @@ import okhttp3.logging.HttpLoggingInterceptor
 import org.koin.android.ext.koin.androidContext
 import org.koin.dsl.module
 import retrofit2.Retrofit
+import retrofit2.converter.kotlinx.serialization.asConverterFactory
 
 val dataModule = module {
     single { CookieStorage(androidContext()) }
