@@ -35,7 +35,7 @@ interface WanAndroidApi {
     @GET("project/list/{page}/json")
     suspend fun getProjectArticles(@Path("page") page: Int, @Query("cid") cid: Int): BaseResponse<ArticleData>
     
-    @GET("coin/userinfo/json")
+    @GET("lg/coin/userinfo/json")
     suspend fun getUserInfo(): BaseResponse<UserInfoDto>
 
     @FormUrlEncoded
