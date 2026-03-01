@@ -43,7 +43,10 @@ import org.koin.androidx.compose.koinViewModel
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
-fun WxArticleScreen(viewModel: WxArticleViewModel = koinViewModel()) {
+fun WxArticleScreen(
+    onArticleClick: (Article) -> Unit,
+    viewModel: WxArticleViewModel = koinViewModel()
+) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val pagerState = rememberPagerState(pageCount = { uiState.chapters.size })
     val scope = rememberCoroutineScope()
