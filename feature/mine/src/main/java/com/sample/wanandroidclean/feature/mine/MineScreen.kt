@@ -12,11 +12,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sample.wanandroidclean.domain.entity.UserInfo
 import org.koin.androidx.compose.koinViewModel
@@ -36,25 +33,29 @@ fun MineScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color(0xFF121212)) // 整体深色背景
+                .background(MaterialTheme.colorScheme.background)
         ) {
             if (uiState.userInfo != null) {
                 UserInfoHeader(userInfo = uiState.userInfo!!)
             } else {
-                // 未登录状态的占位头部
                 GuestHeader(onLoginClick = onLoginClick)
             }
             
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(8.dp))
             
-            Column(modifier = Modifier.background(Color(0xFF1E1E1E))) {
-                MineMenuItem(icon = Icons.Default.Star, title = "我的积分", value = uiState.userInfo?.coinCount?.toString())
-                MineMenuItem(icon = Icons.Default.Share, title = "我的分享")
-                MineMenuItem(icon = Icons.Default.Favorite, title = "我的收藏")
-                MineMenuItem(icon = Icons.Default.Favorite, title = "稍后阅读")
-                MineMenuItem(icon = Icons.Default.Favorite, title = "开源项目")
-                MineMenuItem(icon = Icons.Default.Info, title = "关于作者")
-                MineMenuItem(icon = Icons.Default.Settings, title = "系统设置")
+            Surface(
+                tonalElevation = 1.dp,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column {
+                    MineMenuItem(icon = Icons.Default.Star, title = "我的积分", value = uiState.userInfo?.coinCount?.toString())
+                    MineMenuItem(icon = Icons.Default.Share, title = "我的分享")
+                    MineMenuItem(icon = Icons.Default.Favorite, title = "我的收藏")
+                    MineMenuItem(icon = Icons.Default.Favorite, title = "稍后阅读")
+                    MineMenuItem(icon = Icons.Default.AccountCircle, title = "开源项目")
+                    MineMenuItem(icon = Icons.Default.Info, title = "关于作者")
+                    MineMenuItem(icon = Icons.Default.Settings, title = "系统设置")
+                }
             }
         }
     }
@@ -65,42 +66,41 @@ fun UserInfoHeader(userInfo: UserInfo) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(280.dp)
-            .background(Color(0xFF121212)),
+            .height(220.dp)
+            .background(MaterialTheme.colorScheme.primary), // 统一使用 Primary 色
         contentAlignment = Alignment.Center
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            // Avatar
             Surface(
-                modifier = Modifier.size(100.dp),
+                modifier = Modifier.size(80.dp),
                 shape = CircleShape,
-                color = Color.DarkGray
+                color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.2f)
             ) {
                 Icon(
                     imageVector = Icons.Default.AccountCircle,
                     contentDescription = null,
-                    modifier = Modifier.fillMaxSize(),
-                    tint = Color.Gray
+                    modifier = Modifier.fillMaxSize().padding(8.dp),
+                    tint = MaterialTheme.colorScheme.onPrimary
                 )
             }
             
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(12.dp))
             
             Text(
                 text = userInfo.username,
-                style = MaterialTheme.typography.headlineSmall,
-                color = Color.White
+                style = MaterialTheme.typography.titleLarge,
+                color = MaterialTheme.colorScheme.onPrimary
             )
             Text(
                 text = "ID: ${userInfo.id}",
                 style = MaterialTheme.typography.bodySmall,
-                color = Color.Gray
+                color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f)
             )
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = "等级: ${userInfo.level}  排名: ${userInfo.rank}",
                 style = MaterialTheme.typography.bodyMedium,
-                color = Color.LightGray
+                color = MaterialTheme.colorScheme.onPrimary
             )
         }
     }
@@ -111,30 +111,30 @@ fun GuestHeader(onLoginClick: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(280.dp)
-            .background(Color(0xFF121212)),
+            .height(220.dp)
+            .background(MaterialTheme.colorScheme.primary), // 统一使用 Primary 色
         contentAlignment = Alignment.Center
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Surface(
                 modifier = Modifier
-                    .size(100.dp)
+                    .size(80.dp)
                     .clickable { onLoginClick() },
                 shape = CircleShape,
-                color = Color.DarkGray
+                color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.2f)
             ) {
                 Icon(
                     imageVector = Icons.Default.AccountCircle,
                     contentDescription = null,
-                    modifier = Modifier.fillMaxSize(),
-                    tint = Color.Gray
+                    modifier = Modifier.fillMaxSize().padding(8.dp),
+                    tint = MaterialTheme.colorScheme.onPrimary
                 )
             }
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(12.dp))
             Text(
-                text = "请先登录",
-                style = MaterialTheme.typography.headlineSmall,
-                color = Color.White,
+                text = "点击登录",
+                style = MaterialTheme.typography.titleLarge,
+                color = MaterialTheme.colorScheme.onPrimary,
                 modifier = Modifier.clickable { onLoginClick() }
             )
         }
@@ -158,14 +158,14 @@ fun MineMenuItem(
             Icon(
                 imageVector = icon, 
                 contentDescription = title, 
-                tint = Color(0xFF64B5F6), // 浅蓝色图标
-                modifier = Modifier.size(24.dp)
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(22.dp)
             )
             Spacer(modifier = Modifier.width(16.dp))
             Text(
                 text = title, 
                 style = MaterialTheme.typography.bodyLarge, 
-                color = Color.White,
+                color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.weight(1f)
             )
             
@@ -173,7 +173,7 @@ fun MineMenuItem(
                 Text(
                     text = value,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = Color.Gray,
+                    color = MaterialTheme.colorScheme.outline,
                     modifier = Modifier.padding(end = 8.dp)
                 )
             }
@@ -181,14 +181,14 @@ fun MineMenuItem(
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                 contentDescription = null, 
-                modifier = Modifier.size(14.dp), 
-                tint = Color.Gray
+                modifier = Modifier.size(12.dp), 
+                tint = MaterialTheme.colorScheme.outline
             )
         }
-        Divider(
-            modifier = Modifier.padding(start = 56.dp), 
+        HorizontalDivider(
+            modifier = Modifier.padding(start = 54.dp), 
             thickness = 0.5.dp, 
-            color = Color(0xFF333333)
+            color = MaterialTheme.colorScheme.outlineVariant
         )
     }
 }
