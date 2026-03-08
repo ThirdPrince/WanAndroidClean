@@ -13,4 +13,5 @@ val domainModule = module {
     factory { GetProjectArticlesUseCase(get()) }
     factory { GetUserInfoUseCase(get()) }
     factory { LoginUseCase(get()) }
+    factory { GetCollectionsUseCase(get()) }
 }

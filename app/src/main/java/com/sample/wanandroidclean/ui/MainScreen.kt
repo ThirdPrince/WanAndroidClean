@@ -21,6 +21,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.sample.wanandroidclean.feature.home.articles.ArticlesScreen
+import com.sample.wanandroidclean.feature.mine.CollectionScreen
 import com.sample.wanandroidclean.feature.mine.LoginScreen
 import com.sample.wanandroidclean.feature.mine.MineScreen
 import com.sample.wanandroidclean.feature.project.ProjectScreen
@@ -47,7 +48,6 @@ fun MainScreen() {
 
     Scaffold(
         bottomBar = {
-            // 使用动画控制导航栏的显示和隐藏
             AnimatedVisibility(
                 visible = showBottomBar,
                 enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
@@ -57,12 +57,10 @@ fun MainScreen() {
             }
         }
     ) { innerPadding ->
-        // 使用 Box 配合 padding 确保布局平稳
         Box(modifier = Modifier.padding(if (showBottomBar) innerPadding else androidx.compose.foundation.layout.PaddingValues())) {
             NavHost(
                 navController = navController,
                 startDestination = NavigationItem.Home.route,
-                // 配置全局的进入和退出动画
                 enterTransition = {
                     slideInHorizontally(initialOffsetX = { it }, animationSpec = tween(300)) + fadeIn()
                 },
@@ -96,11 +94,24 @@ fun MainScreen() {
                     })
                 }
                 composable(NavigationItem.Mine.route) {
-                    MineScreen(onLoginClick = { navController.navigate("login") })
+                    MineScreen(
+                        onLoginClick = { navController.navigate("login") },
+                        onCollectionClick = { navController.navigate("collection") } // 这里连接了点击跳转
+                    )
                 }
 
                 composable("login") {
                     LoginScreen(onBackClick = { navController.popBackStack() })
+                }
+
+                composable("collection") {
+                    CollectionScreen(
+                        onBackClick = { navController.popBackStack() },
+                        onArticleClick = { article ->
+                            val encodedUrl = URLEncoder.encode(article.link, StandardCharsets.UTF_8.toString())
+                            navController.navigate("article_detail/${article.title}/$encodedUrl")
+                        }
+                    )
                 }
 
                 composable(

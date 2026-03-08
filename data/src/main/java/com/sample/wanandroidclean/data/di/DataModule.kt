@@ -16,9 +16,7 @@ import retrofit2.Retrofit
 import retrofit2.converter.kotlinx.serialization.asConverterFactory
 
 val dataModule = module {
-    // Provide a global CoroutineScope for data tasks (like persisting cookies)
     single { CoroutineScope(Dispatchers.IO + SupervisorJob()) }
-
     single { CookieStorage(androidContext(), get()) }
     single { PersistentCookieJar(get()) }
 
@@ -42,6 +40,7 @@ val dataModule = module {
     single<ProjectRepository> { ProjectRepositoryImpl(get()) }
     single<UserInfoRepository> { UserInfoRepositoryImpl(get()) }
     single<UserRepository> { UserRepositoryImpl(get()) }
+    single<CollectionRepository> { CollectionRepositoryImpl(get()) }
 
     single<WanAndroidApi> {
         get<Retrofit>().create(WanAndroidApi::class.java)

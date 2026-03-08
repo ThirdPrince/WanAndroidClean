@@ -21,6 +21,7 @@ import org.koin.androidx.compose.koinViewModel
 @Composable
 fun MineScreen(
     onLoginClick: () -> Unit,
+    onCollectionClick: () -> Unit, // 新增收藏点击回调
     viewModel: MineViewModel = koinViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -50,9 +51,13 @@ fun MineScreen(
                 Column {
                     MineMenuItem(icon = Icons.Default.Star, title = "我的积分", value = uiState.userInfo?.coinCount?.toString())
                     MineMenuItem(icon = Icons.Default.Share, title = "我的分享")
-                    MineMenuItem(icon = Icons.Default.Favorite, title = "我的收藏")
-                    MineMenuItem(icon = Icons.Default.Favorite, title = "稍后阅读")
-                    MineMenuItem(icon = Icons.Default.AccountCircle, title = "开源项目")
+                    MineMenuItem(
+                        icon = Icons.Default.Favorite, 
+                        title = "我的收藏",
+                        onClick = onCollectionClick // 绑定点击事件
+                    )
+                    MineMenuItem(icon = Icons.Default.Info, title = "稍后阅读")
+                    MineMenuItem(icon = Icons.Default.Info, title = "开源项目")
                     MineMenuItem(icon = Icons.Default.Info, title = "关于作者")
                     MineMenuItem(icon = Icons.Default.Settings, title = "系统设置")
                 }
@@ -67,7 +72,7 @@ fun UserInfoHeader(userInfo: UserInfo) {
         modifier = Modifier
             .fillMaxWidth()
             .height(220.dp)
-            .background(MaterialTheme.colorScheme.primary), // 统一使用 Primary 色
+            .background(MaterialTheme.colorScheme.primary),
         contentAlignment = Alignment.Center
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -112,7 +117,7 @@ fun GuestHeader(onLoginClick: () -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .height(220.dp)
-            .background(MaterialTheme.colorScheme.primary), // 统一使用 Primary 色
+            .background(MaterialTheme.colorScheme.primary),
         contentAlignment = Alignment.Center
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {

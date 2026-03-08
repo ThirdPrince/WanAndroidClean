@@ -44,4 +44,7 @@ interface WanAndroidApi {
         @Field("username") username: String,
         @Field("password") password: String
     ): BaseResponse<UserInfoDto>
+
+    @GET("lg/collect/list/{page}/json")
+    suspend fun getCollections(@Path("page") page: Int): BaseResponse<ArticleData>
 }
