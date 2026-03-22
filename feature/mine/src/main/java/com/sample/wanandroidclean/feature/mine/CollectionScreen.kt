@@ -29,20 +29,24 @@ fun CollectionScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("我的收藏", color = Color.White) },
+                title = { Text("我的收藏") },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
+                        Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF121212))
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
+                )
             )
         }
     ) { padding ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color(0xFF121212))
+                .background(MaterialTheme.colorScheme.background)
                 .padding(padding)
         ) {
             if (uiState.isLoading) {
@@ -50,15 +54,15 @@ fun CollectionScreen(
             } else if (uiState.collections.isEmpty()) {
                 Text(
                     text = "暂无收藏文章",
-                    color = Color.Gray,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.outline,
                     modifier = Modifier.align(Alignment.Center)
                 )
             } else {
                 LazyColumn(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
                     items(uiState.collections) { article ->
-                        // Reusing the same ArticleItem design
                         CollectionArticleItem(article = article, onClick = { onArticleClick(article) })
-                        HorizontalDivider(color = Color(0xFF333333), thickness = 0.5.dp)
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant, thickness = 0.5.dp)
                     }
                 }
             }
@@ -79,13 +83,13 @@ fun CollectionArticleItem(article: Article, onClick: () -> Unit) {
             Text(
                 text = article.title,
                 style = MaterialTheme.typography.titleMedium,
-                color = Color.White
+                color = MaterialTheme.colorScheme.onBackground
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = "作者: ${article.author.ifEmpty { article.shareUser }}",
                 style = MaterialTheme.typography.bodySmall,
-                color = Color.Gray
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
     }
