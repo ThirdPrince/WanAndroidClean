@@ -1,10 +1,10 @@
 package com.sample.wanandroidclean.data.model
 
+import com.sample.wanandroidclean.data.remote.decodeHtml
 import com.sample.wanandroidclean.domain.entity.Article
-import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.Serializable
 
-@InternalSerializationApi /**
+/**
  * Data Transfer Object for articles, compatible with both normal and collection lists.
  */
 @Serializable
@@ -18,9 +18,9 @@ data class ArticleDto(
 ) {
     fun toDomain(isTop: Boolean = false): Article = Article(
         id = if (originId != 0) originId else id,
-        title = title,
-        author = author,
-        shareUser = shareUser,
+        title = title.decodeHtml(), // 处理 HTML 转义字符
+        author = author.decodeHtml(), // 作者名有时也包含转义
+        shareUser = shareUser.decodeHtml(),
         link = link,
         isTop = isTop
     )
