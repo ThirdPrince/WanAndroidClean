@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -16,7 +17,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ElevatedSuggestionChip
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.PrimaryTabRow
+import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -26,23 +27,33 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.sample.wanandroidclean.domain.entity.Article
 import com.sample.wanandroidclean.domain.entity.SystemCategory
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
-fun SystemScreen(viewModel: SystemViewModel = koinViewModel()) {
+fun SystemScreen(
+    onArticleClick: (Article) -> Unit, // 新增参数
+    viewModel: SystemViewModel = koinViewModel()
+) {
     val systemUiState by viewModel.systemUiState.collectAsStateWithLifecycle()
     val pagerState = rememberPagerState(pageCount = { 2 })
     val scope = rememberCoroutineScope()
 
-    val tabTitles = listOf("System", "Navigation")
+    val tabTitles = listOf("体系", "导航")
 
     Column(modifier = Modifier.fillMaxSize()) {
-        PrimaryTabRow(selectedTabIndex = pagerState.currentPage) {
+        // 使用更精致的 ScrollableTabRow 并统一高度
+        ScrollableTabRow(
+            selectedTabIndex = pagerState.currentPage,
+            edgePadding = 0.dp,
+            divider = {}
+        ) {
             tabTitles.forEachIndexed { index, title ->
                 Tab(
+                    modifier = Modifier.height(48.dp),
                     selected = pagerState.currentPage == index,
                     onClick = { scope.launch { pagerState.animateScrollToPage(index) } },
                     text = { Text(text = title) }
@@ -50,10 +61,10 @@ fun SystemScreen(viewModel: SystemViewModel = koinViewModel()) {
             }
         }
 
-        HorizontalPager(state = pagerState) {
-            when (it) {
+        HorizontalPager(state = pagerState) { pageIndex ->
+            when (pageIndex) {
                 0 -> SystemCategoryList(uiState = systemUiState)
-                1 -> NavigationScreen()
+                1 -> NavigationScreen(onArticleClick = onArticleClick) // 透传回调
             }
         }
     }
@@ -82,7 +93,7 @@ fun SystemCategoryItem(category: SystemCategory, modifier: Modifier = Modifier) 
         FlowRow(modifier = Modifier.padding(top = 8.dp)) {
             category.children.forEach {
                 ElevatedSuggestionChip(
-                    onClick = { /* TODO */ },
+                    onClick = { /* TODO: 跳转到体系下的文章列表 */ },
                     label = { Text(it.name) },
                     modifier = Modifier.padding(end = 8.dp, bottom = 8.dp)
                 )

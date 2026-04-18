@@ -19,11 +19,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.sample.wanandroidclean.domain.entity.Article
 import com.sample.wanandroidclean.domain.entity.Navigation
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
-fun NavigationScreen(viewModel: SystemViewModel = koinViewModel()) {
+fun NavigationScreen(
+    onArticleClick: (Article) -> Unit,
+    viewModel: SystemViewModel = koinViewModel()
+) {
     val uiState by viewModel.navigationUiState.collectAsStateWithLifecycle()
 
     if (uiState.isLoading) {
@@ -33,7 +37,11 @@ fun NavigationScreen(viewModel: SystemViewModel = koinViewModel()) {
     } else {
         LazyColumn(modifier = Modifier.fillMaxSize()) {
             items(uiState.navigation) {
-                NavigationItem(category = it, modifier = Modifier.fillMaxWidth())
+                NavigationItemContent(
+                    category = it, 
+                    onArticleClick = onArticleClick,
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
         }
     }
@@ -41,14 +49,18 @@ fun NavigationScreen(viewModel: SystemViewModel = koinViewModel()) {
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun NavigationItem(category: Navigation, modifier: Modifier = Modifier) {
+fun NavigationItemContent(
+    category: Navigation, 
+    onArticleClick: (Article) -> Unit,
+    modifier: Modifier = Modifier
+) {
     Column(modifier.padding(16.dp)) {
         Text(text = category.name, style = MaterialTheme.typography.titleLarge)
         FlowRow(modifier = Modifier.padding(top = 8.dp)) {
-            category.articles.forEach {
+            category.articles.forEach { article ->
                 ElevatedSuggestionChip(
-                    onClick = { /* TODO */ },
-                    label = { Text(it.title) },
+                    onClick = { onArticleClick(article) },
+                    label = { Text(article.title) },
                     modifier = Modifier.padding(end = 8.dp, bottom = 8.dp)
                 )
             }

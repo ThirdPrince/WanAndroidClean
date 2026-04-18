@@ -80,7 +80,12 @@ fun MainScreen() {
                         navController.navigate("article_detail/${article.title}/$encodedUrl")
                     })
                 }
-                composable(NavigationItem.System.route) { SystemScreen() }
+                composable(NavigationItem.System.route) {
+                    SystemScreen(onArticleClick = { article ->
+                        val encodedUrl = URLEncoder.encode(article.link, StandardCharsets.UTF_8.toString())
+                        navController.navigate("article_detail/${article.title}/$encodedUrl")
+                    })
+                }
                 composable(NavigationItem.WxArticle.route) {
                     WxArticleScreen(onArticleClick = { article ->
                         val encodedUrl = URLEncoder.encode(article.link, StandardCharsets.UTF_8.toString())
@@ -96,7 +101,7 @@ fun MainScreen() {
                 composable(NavigationItem.Mine.route) {
                     MineScreen(
                         onLoginClick = { navController.navigate("login") },
-                        onCollectionClick = { navController.navigate("collection") } // 这里连接了点击跳转
+                        onCollectionClick = { navController.navigate("collection") }
                     )
                 }
 
