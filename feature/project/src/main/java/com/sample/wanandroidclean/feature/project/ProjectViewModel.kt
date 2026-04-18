@@ -6,9 +6,7 @@ import com.sample.wanandroidclean.domain.entity.Article
 import com.sample.wanandroidclean.domain.entity.ProjectChapter
 import com.sample.wanandroidclean.domain.usecase.GetProjectArticlesUseCase
 import com.sample.wanandroidclean.domain.usecase.GetProjectChaptersUseCase
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
 data class ProjectUiState(
@@ -23,44 +21,49 @@ class ProjectViewModel(
     private val getProjectArticlesUseCase: GetProjectArticlesUseCase
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(ProjectUiState())
-    val uiState = _uiState.asStateFlow()
+    // 使用单独的流来管理已加载的文章，方便按需更新
+    private val _articlesMap = MutableStateFlow<Map<Int, List<Article>>>(emptyMap())
 
-    init {
-        loadChapters()
+    /**
+     * 响应式 UI 状态流。
+     * 将“分类加载逻辑”与“已加载文章映射”进行实时合并。
+     */
+    val uiState: StateFlow<ProjectUiState> = flow {
+        // 1. 获取项目分类数据
+        emit(getProjectChaptersUseCase())
     }
-
-    private fun loadChapters() {
-        viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, error = null) }
-            getProjectChaptersUseCase().fold(
-                onSuccess = { chapters ->
-                    _uiState.update { currentState ->
-                        currentState.copy(isLoading = false, chapters = chapters)
-                    }
-                    if (chapters.isNotEmpty()) {
-                        loadArticlesForChapter(chapters.first().id)
-                    }
-                },
-                onFailure = { e ->
-                    _uiState.update { currentState ->
-                        currentState.copy(
-                            isLoading = false,
-                            error = e.localizedMessage ?: "An unknown error occurred"
-                        )
-                    }
-                }
-            )
-        }
+    .combine(_articlesMap) { chaptersResult, articlesMap ->
+        // 2. 将结果转换/合并为 UI 状态
+        chaptersResult.fold(
+            onSuccess = { chapters ->
+                ProjectUiState(
+                    isLoading = false,
+                    chapters = chapters,
+                    articles = articlesMap
+                )
+            },
+            onFailure = { e ->
+                ProjectUiState(
+                    isLoading = false,
+                    error = e.localizedMessage ?: "An unknown error occurred"
+                )
+            }
+        )
     }
+    .stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = ProjectUiState(isLoading = true) // 初始显示加载中
+    )
 
+    /**
+     * 由 UI (Pager) 触发，加载特定分类下的文章。
+     */
     fun loadArticlesForChapter(chapterId: Int, page: Int = 1) {
         viewModelScope.launch {
             getProjectArticlesUseCase(page, chapterId).onSuccess { articles ->
-                _uiState.update { currentState ->
-                    val newArticlesMap = currentState.articles.toMutableMap()
-                    newArticlesMap[chapterId] = articles
-                    currentState.copy(articles = newArticlesMap)
+                _articlesMap.update { currentMap ->
+                    currentMap + (chapterId to articles)
                 }
             }
         }
