@@ -47,4 +47,8 @@ interface WanAndroidApi {
 
     @GET("lg/collect/list/{page}/json")
     suspend fun getCollections(@Path("page") page: Int): BaseResponse<ArticleData>
+
+    // 体系文章列表
+    @GET("article/list/{page}/json")
+    suspend fun getSystemArticles(@Path("page") page: Int, @Query("cid") cid: Int): BaseResponse<ArticleData>
 }

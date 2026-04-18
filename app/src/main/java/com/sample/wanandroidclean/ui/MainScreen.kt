@@ -13,6 +13,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -20,11 +23,13 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.sample.wanandroidclean.domain.entity.SystemCategory
 import com.sample.wanandroidclean.feature.home.articles.ArticlesScreen
 import com.sample.wanandroidclean.feature.mine.CollectionScreen
 import com.sample.wanandroidclean.feature.mine.LoginScreen
 import com.sample.wanandroidclean.feature.mine.MineScreen
 import com.sample.wanandroidclean.feature.project.ProjectScreen
+import com.sample.wanandroidclean.feature.system.SystemDetailScreen
 import com.sample.wanandroidclean.feature.system.SystemScreen
 import com.sample.wanandroidclean.feature.web.WebScreen
 import com.sample.wanandroidclean.feature.wxarticle.WxArticleScreen
@@ -37,6 +42,9 @@ fun MainScreen() {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
+
+    // 用于在页面间暂存选中的体系分类
+    var selectedCategory by remember { mutableStateOf<SystemCategory?>(null) }
 
     val showBottomBar = currentRoute in listOf(
         NavigationItem.Home.route,
@@ -81,11 +89,31 @@ fun MainScreen() {
                     })
                 }
                 composable(NavigationItem.System.route) {
-                    SystemScreen(onArticleClick = { article ->
-                        val encodedUrl = URLEncoder.encode(article.link, StandardCharsets.UTF_8.toString())
-                        navController.navigate("article_detail/${article.title}/$encodedUrl")
-                    })
+                    SystemScreen(
+                        onArticleClick = { article ->
+                            val encodedUrl = URLEncoder.encode(article.link, StandardCharsets.UTF_8.toString())
+                            navController.navigate("article_detail/${article.title}/$encodedUrl")
+                        },
+                        onCategoryClick = { category ->
+                            selectedCategory = category
+                            navController.navigate("system_detail")
+                        }
+                    )
                 }
+                
+                composable("system_detail") {
+                    selectedCategory?.let { category ->
+                        SystemDetailScreen(
+                            category = category,
+                            onBackClick = { navController.popBackStack() },
+                            onArticleClick = { article ->
+                                val encodedUrl = URLEncoder.encode(article.link, StandardCharsets.UTF_8.toString())
+                                navController.navigate("article_detail/${article.title}/$encodedUrl")
+                            }
+                        )
+                    }
+                }
+
                 composable(NavigationItem.WxArticle.route) {
                     WxArticleScreen(onArticleClick = { article ->
                         val encodedUrl = URLEncoder.encode(article.link, StandardCharsets.UTF_8.toString())
