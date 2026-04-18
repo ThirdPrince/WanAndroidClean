@@ -2,29 +2,14 @@ package com.sample.wanandroidclean.feature.wxarticle
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Divider
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ScrollableTabRow
-import androidx.compose.material3.Tab
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -60,11 +45,11 @@ fun WxArticleScreen(
             if (uiState.chapters.isNotEmpty()) {
                 ScrollableTabRow(
                     selectedTabIndex = pagerState.currentPage,
-                    edgePadding = 0.dp // remove the default padding
+                    edgePadding = 0.dp
                 ) {
                     uiState.chapters.forEachIndexed { index, chapter ->
                         Tab(
-                            modifier = Modifier.height(48.dp), // You can now safely set a height
+                            modifier = Modifier.height(48.dp),
                             selected = pagerState.currentPage == index,
                             onClick = { scope.launch { pagerState.animateScrollToPage(index) } },
                             text = { Text(text = chapter.name) }
@@ -72,8 +57,8 @@ fun WxArticleScreen(
                     }
                 }
 
-                HorizontalPager(state = pagerState) {
-                    val chapterId = uiState.chapters[it].id
+                HorizontalPager(state = pagerState) { pageIndex ->
+                    val chapterId = uiState.chapters[pageIndex].id
                     val articles = uiState.articles[chapterId] ?: emptyList()
 
                     LaunchedEffect(key1 = chapterId) {
@@ -82,7 +67,10 @@ fun WxArticleScreen(
                         }
                     }
 
-                    ArticlesList(articles = articles)
+                    ArticlesList(
+                        articles = articles,
+                        onArticleClick = onArticleClick
+                    )
                 }
             }
         }
@@ -90,10 +78,19 @@ fun WxArticleScreen(
 }
 
 @Composable
-fun ArticlesList(articles: List<Article>, modifier: Modifier = Modifier) {
+fun ArticlesList(
+    articles: List<Article>,
+    onArticleClick: (Article) -> Unit,
+    modifier: Modifier = Modifier
+) {
     LazyColumn(modifier = modifier) {
         items(articles) { article ->
-            ArticleItem(article = article, modifier = Modifier.fillMaxWidth())
+            ArticleItem(
+                article = article,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { onArticleClick(article) }
+            )
         }
     }
 }
@@ -102,7 +99,7 @@ fun ArticlesList(articles: List<Article>, modifier: Modifier = Modifier) {
 fun ArticleItem(article: Article, modifier: Modifier = Modifier) {
     Card(
         modifier = modifier
-            .padding(vertical = 8.dp),
+            .padding(vertical = 5.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(
