@@ -4,10 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sample.wanandroidclean.domain.entity.UserInfo
 import com.sample.wanandroidclean.domain.usecase.GetUserInfoUseCase
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.*
 
 data class MineUiState(
     val isLoading: Boolean = false,
@@ -17,31 +14,26 @@ data class MineUiState(
 
 class MineViewModel(private val getUserInfoUseCase: GetUserInfoUseCase) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(MineUiState())
-    val uiState = _uiState.asStateFlow()
-
-    init {
-        loadUserInfo()
-    }
-
-    private fun loadUserInfo() {
-        viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, error = null) }
-            getUserInfoUseCase().fold(
-                onSuccess = { userInfo ->
-                    _uiState.update { currentState ->
-                        currentState.copy(isLoading = false, userInfo = userInfo)
-                    }
-                },
-                onFailure = { e ->
-                    _uiState.update { currentState ->
-                        currentState.copy(
-                            isLoading = false,
-                            error = e.localizedMessage ?: "An unknown error occurred"
-                        )
-                    }
-                }
-            )
-        }
-    }
+    /**
+     * 响应式 UI 状态流
+     * 当 UI 开始收集 (Collect) 此流时，会自动触发数据加载逻辑
+     */
+    val uiState: StateFlow<MineUiState> = flow {
+        // 发射加载中状态
+        emit(MineUiState(isLoading = true))
+        
+        // 执行获取用户信息逻辑
+        getUserInfoUseCase().fold(
+            onSuccess = { userInfo ->
+                emit(MineUiState(isLoading = false, userInfo = userInfo))
+            },
+            onFailure = { e ->
+                emit(MineUiState(isLoading = false, error = e.localizedMessage ?: "An unknown error occurred"))
+            }
+        )
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = MineUiState(isLoading = true)
+    )
 }
