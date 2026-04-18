@@ -48,7 +48,7 @@ val dataModule = module {
 
     single<Retrofit> {
         Retrofit.Builder()
-            .baseUrl("https://www.wanandroid.com/")
+            .baseUrl("https://wanandroid.com/")
             .client(get<OkHttpClient>())
             .addConverterFactory(get<Json>().asConverterFactory("application/json".toMediaType()))
             .build()

@@ -44,7 +44,21 @@ fun ArticlesScreen(
         ) {
             if (uiState.banners.isNotEmpty()) {
                 item {
-                    BannerPager(banners = uiState.banners)
+                    BannerPager(
+                        banners = uiState.banners,
+                        onBannerClick = { banner ->
+                            // 将 Banner 包装成 Article 对象以复用详情页跳转逻辑
+                            val dummyArticle = Article(
+                                id = banner.id,
+                                title = banner.title,
+                                author = "",
+                                shareUser = "",
+                                link = banner.url,
+                                isTop = false
+                            )
+                            onArticleClick(dummyArticle)
+                        }
+                    )
                 }
             }
 
@@ -53,7 +67,7 @@ fun ArticlesScreen(
                     article = article,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable { onArticleClick(article) } // 处理点击事件
+                        .clickable { onArticleClick(article) }
                 )
             }
         }
@@ -62,7 +76,10 @@ fun ArticlesScreen(
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun BannerPager(banners: List<Banner>) {
+fun BannerPager(
+    banners: List<Banner>,
+    onBannerClick: (Banner) -> Unit
+) {
     val pagerState = rememberPagerState(pageCount = { banners.size })
     var isDragged by remember { mutableStateOf(false) }
 
@@ -70,19 +87,25 @@ fun BannerPager(banners: List<Banner>) {
         if (!isDragged) {
             while (true) {
                 delay(3000)
-                pagerState.animateScrollToPage((pagerState.currentPage + 1) % pagerState.pageCount)
+                try {
+                    pagerState.animateScrollToPage((pagerState.currentPage + 1) % pagerState.pageCount)
+                } catch (e: Exception) {
+                    // Handle potential cancellation during animation
+                }
             }
         }
     }
 
     Box(modifier = Modifier.fillMaxWidth().height(200.dp)) {
-        HorizontalPager(state = pagerState) {
-            val banner = banners[it]
+        HorizontalPager(state = pagerState) { index ->
+            val banner = banners[index]
             AsyncImage(
                 model = banner.imagePath,
                 contentDescription = banner.title,
                 contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clickable { onBannerClick(banner) } // 为每一张图片添加点击事件
             )
         }
 
@@ -94,7 +117,7 @@ fun BannerPager(banners: List<Banner>) {
 @Composable
 fun ArticleItem(article: Article, modifier: Modifier = Modifier) {
     Card(
-        modifier = modifier.padding(vertical = 8.dp),
+        modifier = modifier.padding(vertical = 5.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(
