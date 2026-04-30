@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.androidLibrary)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.ksp) // 添加 KSP 插件
 }
 
 android {
@@ -19,13 +20,21 @@ android {
     
     kotlinOptions {
         jvmTarget = "17"
-        freeCompilerArgs += listOf("-Xopt-in=kotlinx.serialization.InternalSerializationApi")
-
+        // 保持 Opt-in 以解决序列化内部 API 警告
+        freeCompilerArgs = freeCompilerArgs + listOf(
+            "-opt-in=kotlinx.serialization.ExperimentalSerializationApi",
+            "-opt-in=kotlinx.serialization.InternalSerializationApi"
+        )
     }
 }
 
 dependencies {
     implementation(project(":domain"))
+
+    // Room
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx)
+    ksp(libs.androidx.room.compiler) // 使用 KSP 处理 Room 注解
 
     // DataStore
     implementation(libs.androidx.datastore.preferences)

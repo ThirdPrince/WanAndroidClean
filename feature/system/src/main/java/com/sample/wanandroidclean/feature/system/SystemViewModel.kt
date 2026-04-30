@@ -6,10 +6,7 @@ import com.sample.wanandroidclean.domain.entity.Navigation
 import com.sample.wanandroidclean.domain.entity.SystemCategory
 import com.sample.wanandroidclean.domain.usecase.GetNavigationUseCase
 import com.sample.wanandroidclean.domain.usecase.GetSystemCategoriesUseCase
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.*
 
 data class SystemUiState(
     val isLoading: Boolean = false,
@@ -28,56 +25,37 @@ class SystemViewModel(
     private val getNavigationUseCase: GetNavigationUseCase
 ) : ViewModel() {
 
-    private val _systemUiState = MutableStateFlow(SystemUiState())
-    val systemUiState = _systemUiState.asStateFlow()
-
-    private val _navigationUiState = MutableStateFlow(NavigationUiState())
-    val navigationUiState = _navigationUiState.asStateFlow()
-
-    init {
-        loadCategories()
-        loadNavigation()
-    }
-
-    private fun loadCategories() {
-        viewModelScope.launch {
-            _systemUiState.update { it.copy(isLoading = true, error = null) }
-            getSystemCategoriesUseCase().fold(
-                onSuccess = {
-                    _systemUiState.update { currentState ->
-                        currentState.copy(isLoading = false, categories = it)
-                    }
-                },
-                onFailure = { e ->
-                    _systemUiState.update { currentState ->
-                        currentState.copy(
-                            isLoading = false,
-                            error = e.localizedMessage ?: "An unknown error occurred"
-                        )
-                    }
-                }
-            )
+    /**
+     * 响应式体系分类状态流
+     */
+    val systemUiState: StateFlow<SystemUiState> = flow {
+        emit(SystemUiState(isLoading = true))
+        getSystemCategoriesUseCase().collect { result ->
+            val categories = result.getOrNull()
+            if (categories != null) {
+                emit(SystemUiState(categories = categories))
+            } else {
+                emit(SystemUiState(error = result.exceptionOrNull()?.localizedMessage))
+            }
         }
-    }
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = SystemUiState(isLoading = true)
+    )
 
-    private fun loadNavigation() {
-        viewModelScope.launch {
-            _navigationUiState.update { it.copy(isLoading = true, error = null) }
-            getNavigationUseCase().fold(
-                onSuccess = {
-                    _navigationUiState.update { currentState ->
-                        currentState.copy(isLoading = false, navigation = it)
-                    }
-                },
-                onFailure = { e ->
-                    _navigationUiState.update { currentState ->
-                        currentState.copy(
-                            isLoading = false,
-                            error = e.localizedMessage ?: "An unknown error occurred"
-                        )
-                    }
-                }
-            )
-        }
-    }
+    /**
+     * 响应式导航数据状态流
+     */
+    val navigationUiState: StateFlow<NavigationUiState> = flow {
+        emit(NavigationUiState(isLoading = true))
+        getNavigationUseCase().fold(
+            onSuccess = { emit(NavigationUiState(navigation = it)) },
+            onFailure = { e -> emit(NavigationUiState(error = e.localizedMessage)) }
+        )
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = NavigationUiState(isLoading = true)
+    )
 }
