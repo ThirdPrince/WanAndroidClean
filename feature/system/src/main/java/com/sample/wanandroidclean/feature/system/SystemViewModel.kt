@@ -49,10 +49,14 @@ class SystemViewModel(
      */
     val navigationUiState: StateFlow<NavigationUiState> = flow {
         emit(NavigationUiState(isLoading = true))
-        getNavigationUseCase().fold(
-            onSuccess = { emit(NavigationUiState(navigation = it)) },
-            onFailure = { e -> emit(NavigationUiState(error = e.localizedMessage)) }
-        )
+        getNavigationUseCase().collect { result ->
+            val navigation = result.getOrNull()
+            if (navigation != null) {
+                emit(NavigationUiState(navigation = navigation))
+            } else {
+                emit(NavigationUiState(error = result.exceptionOrNull()?.localizedMessage))
+            }
+        }
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),

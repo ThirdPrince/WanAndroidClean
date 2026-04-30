@@ -1,9 +1,10 @@
 package com.sample.wanandroidclean.data.model
 
 import com.sample.wanandroidclean.domain.entity.Navigation
+import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.Serializable
 
-@Serializable
+@InternalSerializationApi @Serializable
 data class NavigationDto(
     val cid: Int,
     val name: String,

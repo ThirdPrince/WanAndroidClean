@@ -1,6 +1,10 @@
 package com.sample.wanandroidclean.data.di
 
 import androidx.room.Room
+import com.sample.wanandroidclean.data.datasource.NavigationLocalDataSource
+import com.sample.wanandroidclean.data.datasource.NavigationLocalDataSourceImpl
+import com.sample.wanandroidclean.data.datasource.NavigationRemoteDataSource
+import com.sample.wanandroidclean.data.datasource.NavigationRemoteDataSourceImpl
 import com.sample.wanandroidclean.data.datasource.SystemLocalDataSource
 import com.sample.wanandroidclean.data.datasource.SystemLocalDataSourceImpl
 import com.sample.wanandroidclean.data.datasource.SystemRemoteDataSource
@@ -30,8 +34,11 @@ val dataModule = module {
         ).fallbackToDestructiveMigration().build()
     }
     single { get<AppDatabase>().systemDao() }
+    single { get<AppDatabase>().navigationDao() }
     single<SystemRemoteDataSource> { SystemRemoteDataSourceImpl(get()) }
     single<SystemLocalDataSource> { SystemLocalDataSourceImpl(get()) }
+    single<NavigationRemoteDataSource> { NavigationRemoteDataSourceImpl(get()) }
+    single<NavigationLocalDataSource> { NavigationLocalDataSourceImpl(get()) }
 
     single { CoroutineScope(Dispatchers.IO + SupervisorJob()) }
     single { CookieStorage(androidContext(), get()) }
@@ -52,7 +59,7 @@ val dataModule = module {
     single<BannerRepository> { BannerRepositoryImpl(get()) }
     single<TopArticleRepository> { TopArticleRepositoryImpl(get()) }
     single<SystemRepository> { SystemRepositoryImpl(get(), get(), get()) }
-    single<NavigationRepository> { NavigationRepositoryImpl(get()) }
+    single<NavigationRepository> { NavigationRepositoryImpl(get(), get()) }
     single<WxArticleRepository> { WxArticleRepositoryImpl(get()) }
     single<ProjectRepository> { ProjectRepositoryImpl(get()) }
     single<UserInfoRepository> { UserInfoRepositoryImpl(get()) }
