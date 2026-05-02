@@ -28,38 +28,32 @@ class SystemViewModel(
     /**
      * 响应式体系分类状态流
      */
-    val systemUiState: StateFlow<SystemUiState> = flow {
-        emit(SystemUiState(isLoading = true))
-        getSystemCategoriesUseCase().collect { result ->
-            val categories = result.getOrNull()
-            if (categories != null) {
-                emit(SystemUiState(categories = categories))
-            } else {
-                emit(SystemUiState(error = result.exceptionOrNull()?.localizedMessage))
-            }
+    val systemUiState: StateFlow<SystemUiState> = getSystemCategoriesUseCase()
+        .map { result ->
+            result.fold(
+                onSuccess = { SystemUiState(categories = it) },
+                onFailure = { SystemUiState(error = it.localizedMessage) }
+            )
         }
-    }.stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5000),
-        initialValue = SystemUiState(isLoading = true)
-    )
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = SystemUiState(isLoading = true)
+        )
 
     /**
      * 响应式导航数据状态流
      */
-    val navigationUiState: StateFlow<NavigationUiState> = flow {
-        emit(NavigationUiState(isLoading = true))
-        getNavigationUseCase().collect { result ->
-            val navigation = result.getOrNull()
-            if (navigation != null) {
-                emit(NavigationUiState(navigation = navigation))
-            } else {
-                emit(NavigationUiState(error = result.exceptionOrNull()?.localizedMessage))
-            }
+    val navigationUiState: StateFlow<NavigationUiState> = getNavigationUseCase()
+        .map { result ->
+            result.fold(
+                onSuccess = { NavigationUiState(navigation = it) },
+                onFailure = { NavigationUiState(error = it.localizedMessage) }
+            )
         }
-    }.stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5000),
-        initialValue = NavigationUiState(isLoading = true)
-    )
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = NavigationUiState(isLoading = true)
+        )
 }
