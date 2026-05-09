@@ -5,21 +5,21 @@ coreKtx = "1.12.0"
 junit = "4.13.2"
 junitVersion = "1.1.5"
 espressoCore = "3.5.1"
-lifecycle = "2.8.6"
-activityCompose = "1.9.3"
-composeBom = "2024.10.00"
+lifecycle = "2.7.0"
+activityCompose = "1.8.2"
+composeBom = "2024.02.02"
 koin = "3.5.3"
 retrofit = "2.11.0"
 okhttp = "4.12.0"
 kotlinxSerializationJson = "1.7.3"
-navigationCompose = "2.8.3"
+navigationCompose = "2.7.7"
 coil = "2.7.0"
 coroutines = "1.9.0"
 splashscreen = "1.0.1"
 datastore = "1.1.1"
 room = "2.6.1"
 ksp = "2.0.21-1.0.26"
-paging = "3.3.2"
+paging = "3.2.1"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -31,7 +31,7 @@ androidx-room-paging = { group = "androidx.room", name = "room-paging", version.
 androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
 androidx-paging-runtime = { group = "androidx.paging", name = "paging-runtime", version.ref = "paging" }
 androidx-paging-compose = { group = "androidx.paging", name = "paging-compose", version.ref = "paging" }
-androidx-paging-common = { group = "androidx.paging", name = "paging-common", version.ref = "paging" }
+androidx-paging-common = { group = "androidx.paging", name = "paging-common-ktx", version.ref = "paging" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
