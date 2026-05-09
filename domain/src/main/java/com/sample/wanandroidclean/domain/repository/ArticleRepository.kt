@@ -1,6 +1,8 @@
 package com.sample.wanandroidclean.domain.repository
 
+import androidx.paging.PagingData
 import com.sample.wanandroidclean.domain.entity.Article
+import kotlinx.coroutines.flow.Flow
 
 /**
  * Interface for the articles repository.
@@ -8,7 +10,12 @@ import com.sample.wanandroidclean.domain.entity.Article
 interface ArticleRepository {
 
     /**
-     * Fetches a single page of articles from the data source.
+     * Fetches a flow of paging data for articles, supporting offline-first logic.
+     */
+    fun getArticlesPaging(): Flow<PagingData<Article>>
+
+    /**
+     * Standard fetch for a single page of articles (useful for headers or non-paging UI).
      */
     suspend fun getArticles(page: Int): Result<List<Article>>
 }

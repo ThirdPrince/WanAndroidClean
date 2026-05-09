@@ -6,7 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.collectIsDraggedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -15,12 +15,16 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.paging.LoadState
+import androidx.paging.compose.LazyPagingItems
+import androidx.paging.compose.collectAsLazyPagingItems
+import androidx.paging.compose.itemContentType
+import androidx.paging.compose.itemKey
 import coil.compose.AsyncImage
 import com.sample.wanandroidclean.domain.entity.Article
 import com.sample.wanandroidclean.domain.entity.Banner
@@ -33,36 +37,41 @@ fun ArticlesScreen(
     viewModel: ArticlesViewModel = koinViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    
+    // 1. 显式声明类型，辅助编译器和 IDE 识别扩展函数
+    val pagingItems: LazyPagingItems<Article> = viewModel.articlesPagingData.collectAsLazyPagingItems()
 
-    if (uiState.isLoading) {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            CircularProgressIndicator()
-        }
-    } else {
-        LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(horizontal = 8.dp)
-        ) {
-            if (uiState.banners.isNotEmpty()) {
-                item {
-                    BannerPager(
-                        banners = uiState.banners,
-                        onBannerClick = { banner ->
-                            // 将 Banner 包装成 Article 对象以复用详情页跳转逻辑
-                            val dummyArticle = Article(
-                                id = banner.id,
-                                title = banner.title,
-                                author = "",
-                                shareUser = "",
-                                link = banner.url,
-                                isTop = false
-                            )
-                            onArticleClick(dummyArticle)
-                        }
-                    )
-                }
+    LazyColumn(
+        modifier = Modifier.fillMaxSize().padding(horizontal = 8.dp)
+    ) {
+        // Banner 部分
+        if (uiState.banners.isNotEmpty()) {
+            item {
+                BannerPager(
+                    banners = uiState.banners,
+                    onBannerClick = { banner ->
+                        val dummyArticle = Article(
+                            id = banner.id,
+                            title = banner.title,
+                            author = "",
+                            shareUser = "",
+                            link = banner.url
+                        )
+                        onArticleClick(dummyArticle)
+                    }
+                )
+                Spacer(modifier = Modifier.height(8.dp))
             }
+        }
 
-            items(uiState.articles) { article ->
+        // 2. 渲染分页文章列表
+        items(
+            count = pagingItems.itemCount,
+            key = pagingItems.itemKey { it.id },
+            contentType = pagingItems.itemContentType { "article" }
+        ) { index ->
+            val article = pagingItems[index]
+            if (article != null) {
                 ArticleItem(
                     article = article,
                     modifier = Modifier
@@ -70,6 +79,69 @@ fun ArticlesScreen(
                         .clickable { onArticleClick(article) }
                 )
             }
+        }
+
+        // 3. 渲染加载状态
+        renderPagingStates(pagingItems)
+    }
+}
+
+/**
+ * 提取分页状态渲染逻辑，提高代码整洁度
+ */
+private fun LazyListScope.renderPagingStates(pagingItems: LazyPagingItems<Article>) {
+    pagingItems.apply {
+        when {
+            // 初始加载中 (且本地暂无数据)
+            loadState.refresh is LoadState.Loading && itemCount == 0 -> {
+                item {
+                    Box(modifier = Modifier.fillParentMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator()
+                    }
+                }
+            }
+            // 加载更多中
+            loadState.append is LoadState.Loading -> {
+                item {
+                    Box(modifier = Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                    }
+                }
+            }
+            // 刷新失败
+            loadState.refresh is LoadState.Error -> {
+                val error = loadState.refresh as LoadState.Error
+                item {
+                    ErrorMessage(
+                        message = error.error.localizedMessage ?: "Refresh failed",
+                        onClickRetry = { retry() }
+                    )
+                }
+            }
+            // 加载更多失败
+            loadState.append is LoadState.Error -> {
+                val error = loadState.append as LoadState.Error
+                item {
+                    ErrorMessage(
+                        message = error.error.localizedMessage ?: "Load more failed",
+                        onClickRetry = { retry() }
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun ErrorMessage(message: String, onClickRetry: () -> Unit) {
+    Column(
+        modifier = Modifier.fillMaxWidth().padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(text = message, color = MaterialTheme.colorScheme.error)
+        Spacer(modifier = Modifier.height(8.dp))
+        Button(onClick = onClickRetry) {
+            Text("Retry")
         }
     }
 }
@@ -89,9 +161,7 @@ fun BannerPager(
                 delay(3000)
                 try {
                     pagerState.animateScrollToPage((pagerState.currentPage + 1) % pagerState.pageCount)
-                } catch (e: Exception) {
-                    // Handle potential cancellation during animation
-                }
+                } catch (e: Exception) {}
             }
         }
     }
@@ -103,12 +173,9 @@ fun BannerPager(
                 model = banner.imagePath,
                 contentDescription = banner.title,
                 contentScale = ContentScale.Crop,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .clickable { onBannerClick(banner) } // 为每一张图片添加点击事件
+                modifier = Modifier.fillMaxSize().clickable { onBannerClick(banner) }
             )
         }
-
         val isDraggedState = pagerState.interactionSource.collectIsDraggedAsState()
         isDragged = isDraggedState.value
     }
@@ -120,38 +187,17 @@ fun ArticleItem(article: Article, modifier: Modifier = Modifier) {
         modifier = modifier.padding(vertical = 5.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
-            Text(
-                text = article.title,
-                style = MaterialTheme.typography.titleMedium
-            )
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(text = article.title, style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(8.dp))
-
             Row(verticalAlignment = Alignment.CenterVertically) {
                 if (article.isTop) {
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(4.dp))
-                            .background(MaterialTheme.colorScheme.primary)
-                            .padding(horizontal = 6.dp, vertical = 2.dp)
-                    ) {
-                        Text(
-                            text = "Top",
-                            color = MaterialTheme.colorScheme.onPrimary,
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Bold
-                        )
+                    Box(modifier = Modifier.clip(RoundedCornerShape(4.dp)).background(MaterialTheme.colorScheme.primary).padding(horizontal = 6.dp, vertical = 2.dp)) {
+                        Text(text = "Top", color = MaterialTheme.colorScheme.onPrimary, fontSize = 10.sp, fontWeight = FontWeight.Bold)
                     }
                     Spacer(modifier = Modifier.width(8.dp))
                 }
-                val authorText = article.author.ifEmpty { article.shareUser }
-                Text(
-                    text = "Author: $authorText",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                Text(text = "Author: ${article.author.ifEmpty { article.shareUser }}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
     }

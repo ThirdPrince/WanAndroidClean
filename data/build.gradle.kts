@@ -2,7 +2,7 @@ plugins {
     alias(libs.plugins.androidLibrary)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.serialization)
-    alias(libs.plugins.ksp) // 添加 KSP 插件
+    alias(libs.plugins.ksp)
 }
 
 android {
@@ -20,7 +20,6 @@ android {
     
     kotlinOptions {
         jvmTarget = "17"
-        // 保持 Opt-in 以解决序列化内部 API 警告
         freeCompilerArgs = freeCompilerArgs + listOf(
             "-opt-in=kotlinx.serialization.ExperimentalSerializationApi",
             "-opt-in=kotlinx.serialization.InternalSerializationApi"
@@ -34,7 +33,13 @@ dependencies {
     // Room
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
-    ksp(libs.androidx.room.compiler) // 使用 KSP 处理 Room 注解
+    // 替换报红行为显式字符串，解决 IDE 索引问题
+    implementation("androidx.room:room-paging:2.6.1") 
+    ksp(libs.androidx.room.compiler)
+
+    // Paging
+    implementation(libs.androidx.paging.runtime)
+    implementation(libs.androidx.paging.common)
 
     // DataStore
     implementation(libs.androidx.datastore.preferences)
