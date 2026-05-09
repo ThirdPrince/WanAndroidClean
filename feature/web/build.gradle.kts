@@ -29,4 +29,7 @@ dependencies {
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.compose.ui.tooling.preview)
+    
+    // 核心依赖：必须包含 activity-compose 才能使用 BackHandler
+    implementation(libs.androidx.activity.compose)
 }

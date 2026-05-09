@@ -1,15 +1,18 @@
 package com.sample.wanandroidclean.feature.web
 
 import android.annotation.SuppressLint
+import android.content.Intent
 import android.view.ViewGroup
+import android.webkit.WebResourceRequest
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
 
@@ -21,12 +24,29 @@ fun WebScreen(
     url: String,
     onBackClick: () -> Unit
 ) {
+    // 1. 持有 WebView 实例引用
+    var webViewInstance by remember { mutableStateOf<WebView?>(null) }
+    
+    // 2. 追踪是否可以回退的状态
+    var canGoBackState by remember { mutableStateOf(false) }
+
+    // 3. 处理物理返回键
+    BackHandler(enabled = canGoBackState) {
+        webViewInstance?.goBack()
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text(text = title, style = MaterialTheme.typography.titleMedium, maxLines = 1) },
                 navigationIcon = {
-                    IconButton(onClick = onBackClick) {
+                    IconButton(onClick = {
+                        if (canGoBackState) {
+                            webViewInstance?.goBack()
+                        } else {
+                            onBackClick()
+                        }
+                    }) {
                         Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 }
@@ -42,28 +62,73 @@ fun WebScreen(
                         ViewGroup.LayoutParams.MATCH_PARENT
                     )
                     
-                    // 核心优化配置
                     settings.apply {
-                        javaScriptEnabled = true // 开启 JS
-                        domStorageEnabled = true // 开启 DOM 存储 (微信文章必需)
+                        javaScriptEnabled = true
+                        domStorageEnabled = true
                         databaseEnabled = true
-                        mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW // 允许 HTTPS 页面加载 HTTP 资源
-                        useWideViewPort = true // 支持 viewport 标签
-                        loadWithOverviewMode = true // 缩放至屏幕大小
-                        setSupportZoom(true) // 支持缩放
-                        builtInZoomControls = true // 显示缩放控件
-                        displayZoomControls = false // 隐藏缩放按钮
-                        cacheMode = WebSettings.LOAD_DEFAULT // 使用默认缓存模式
+                        mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
+                        useWideViewPort = true
+                        loadWithOverviewMode = true
                     }
 
-                    webViewClient = WebViewClient()
+                    webViewClient = object : WebViewClient() {
+                        override fun onPageFinished(view: WebView?, url: String?) {
+                            super.onPageFinished(view, url)
+                            // 页面加载完成后同步状态
+                            canGoBackState = view?.canGoBack() ?: false
+                        }
+
+                        override fun doUpdateVisitedHistory(view: WebView?, url: String?, isReload: Boolean) {
+                            super.doUpdateVisitedHistory(view, url, isReload)
+                            // 网页内部跳转时同步状态
+                            canGoBackState = view?.canGoBack() ?: false
+                        }
+
+                        override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
+                            val uri = request?.url ?: return false
+                            val urlString = uri.toString()
+
+                            // 标准网页链接
+                            if (urlString.startsWith("http://") || urlString.startsWith("https://")) {
+                                return false
+                            }
+
+                            // 处理 intent://
+                            if (urlString.startsWith("intent://")) {
+                                try {
+                                    val intent = Intent.parseUri(urlString, Intent.URI_INTENT_SCHEME)
+                                    val info = context.packageManager.resolveActivity(intent, 0)
+                                    if (info != null) {
+                                        context.startActivity(intent)
+                                    } else {
+                                        intent.getStringExtra("browser_fallback_url")?.let { fallback ->
+                                            view?.loadUrl(fallback)
+                                        }
+                                    }
+                                    return true
+                                } catch (e: Exception) {
+                                    e.printStackTrace()
+                                }
+                            }
+
+                            // 处理其他协议
+                            try {
+                                val intent = Intent(Intent.ACTION_VIEW, uri)
+                                context.startActivity(intent)
+                                return true
+                            } catch (e: Exception) {
+                                return true
+                            }
+                        }
+                    }
+                    
                     loadUrl(url)
+                    webViewInstance = this
                 }
             },
-            update = { webView ->
-                // 仅当 URL 真正改变时才重新加载，避免 Compose 重组导致的重复刷新
-                if (webView.url != url) {
-                    webView.loadUrl(url)
+            update = { 
+                if (it.url == null) {
+                    it.loadUrl(url)
                 }
             }
         )

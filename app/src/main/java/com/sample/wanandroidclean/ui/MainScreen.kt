@@ -84,15 +84,17 @@ fun MainScreen() {
             ) {
                 composable(NavigationItem.Home.route) {
                     ArticlesScreen(onArticleClick = { article ->
+                        val encodedTitle = URLEncoder.encode(article.title, StandardCharsets.UTF_8.toString())
                         val encodedUrl = URLEncoder.encode(article.link, StandardCharsets.UTF_8.toString())
-                        navController.navigate("article_detail/${article.title}/$encodedUrl")
+                        navController.navigate("article_detail/$encodedTitle/$encodedUrl")
                     })
                 }
                 composable(NavigationItem.System.route) {
                     SystemScreen(
                         onArticleClick = { article ->
+                            val encodedTitle = URLEncoder.encode(article.title, StandardCharsets.UTF_8.toString())
                             val encodedUrl = URLEncoder.encode(article.link, StandardCharsets.UTF_8.toString())
-                            navController.navigate("article_detail/${article.title}/$encodedUrl")
+                            navController.navigate("article_detail/$encodedTitle/$encodedUrl")
                         },
                         onCategoryClick = { category ->
                             selectedCategory = category
@@ -107,8 +109,9 @@ fun MainScreen() {
                             category = category,
                             onBackClick = { navController.popBackStack() },
                             onArticleClick = { article ->
+                                val encodedTitle = URLEncoder.encode(article.title, StandardCharsets.UTF_8.toString())
                                 val encodedUrl = URLEncoder.encode(article.link, StandardCharsets.UTF_8.toString())
-                                navController.navigate("article_detail/${article.title}/$encodedUrl")
+                                navController.navigate("article_detail/$encodedTitle/$encodedUrl")
                             }
                         )
                     }
@@ -116,14 +119,16 @@ fun MainScreen() {
 
                 composable(NavigationItem.WxArticle.route) {
                     WxArticleScreen(onArticleClick = { article ->
+                        val encodedTitle = URLEncoder.encode(article.title, StandardCharsets.UTF_8.toString())
                         val encodedUrl = URLEncoder.encode(article.link, StandardCharsets.UTF_8.toString())
-                        navController.navigate("article_detail/${article.title}/$encodedUrl")
+                        navController.navigate("article_detail/$encodedTitle/$encodedUrl")
                     })
                 }
                 composable(NavigationItem.Project.route) {
                     ProjectScreen(onArticleClick = { article ->
+                        val encodedTitle = URLEncoder.encode(article.title, StandardCharsets.UTF_8.toString())
                         val encodedUrl = URLEncoder.encode(article.link, StandardCharsets.UTF_8.toString())
-                        navController.navigate("article_detail/${article.title}/$encodedUrl")
+                        navController.navigate("article_detail/$encodedTitle/$encodedUrl")
                     })
                 }
                 composable(NavigationItem.Mine.route) {
@@ -141,8 +146,9 @@ fun MainScreen() {
                     CollectionScreen(
                         onBackClick = { navController.popBackStack() },
                         onArticleClick = { article ->
+                            val encodedTitle = URLEncoder.encode(article.title, StandardCharsets.UTF_8.toString())
                             val encodedUrl = URLEncoder.encode(article.link, StandardCharsets.UTF_8.toString())
-                            navController.navigate("article_detail/${article.title}/$encodedUrl")
+                            navController.navigate("article_detail/$encodedTitle/$encodedUrl")
                         }
                     )
                 }
@@ -154,9 +160,13 @@ fun MainScreen() {
                         navArgument("url") { type = NavType.StringType }
                     )
                 ) { backStackEntry ->
-                    val title = backStackEntry.arguments?.getString("title") ?: ""
+                    val encodedTitle = backStackEntry.arguments?.getString("title") ?: ""
                     val encodedUrl = backStackEntry.arguments?.getString("url") ?: ""
+                    
+                    // 解码标题和 URL
+                    val title = URLDecoder.decode(encodedTitle, StandardCharsets.UTF_8.toString())
                     val url = URLDecoder.decode(encodedUrl, StandardCharsets.UTF_8.toString())
+                    
                     WebScreen(
                         title = title,
                         url = url,
