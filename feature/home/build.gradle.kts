@@ -27,7 +27,7 @@ android {
 dependencies {
     implementation(project(":domain"))
 
-    // 使用 BOM 统一管理 Compose 版本
+    // Compose BOM
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.graphics)
@@ -35,7 +35,7 @@ dependencies {
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.lifecycle.runtime.compose)
 
-    // Paging 3 - 核心组件
+    // Paging 3 - 核心组件 (必须添加这几行)
     implementation(libs.androidx.paging.runtime)
     implementation(libs.androidx.paging.compose)
     implementation(libs.androidx.paging.common)

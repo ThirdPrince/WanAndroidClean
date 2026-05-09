@@ -38,7 +38,7 @@ fun ArticlesScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     
-    // 1. 显式声明类型，辅助编译器和 IDE 识别扩展函数
+    // 1. 使用显式类型声明辅助 IDE 识别扩展函数，解决 collectAsLazyPagingItems 报错
     val pagingItems: LazyPagingItems<Article> = viewModel.articlesPagingData.collectAsLazyPagingItems()
 
     LazyColumn(
@@ -81,18 +81,18 @@ fun ArticlesScreen(
             }
         }
 
-        // 3. 渲染加载状态
-        renderPagingStates(pagingItems)
+        // 3. 处理分页加载状态
+        renderPagingState(pagingItems)
     }
 }
 
 /**
- * 提取分页状态渲染逻辑，提高代码整洁度
+ * 将加载状态提取为扩展函数，增强代码可读性
  */
-private fun LazyListScope.renderPagingStates(pagingItems: LazyPagingItems<Article>) {
+private fun LazyListScope.renderPagingState(pagingItems: LazyPagingItems<Article>) {
     pagingItems.apply {
         when {
-            // 初始加载中 (且本地暂无数据)
+            // 初始加载中 (且本地暂无缓存)
             loadState.refresh is LoadState.Loading && itemCount == 0 -> {
                 item {
                     Box(modifier = Modifier.fillParentMaxSize(), contentAlignment = Alignment.Center) {
