@@ -33,13 +33,15 @@ dependencies {
     // Room
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
-    // 替换报红行为显式字符串，解决 IDE 索引问题
     implementation("androidx.room:room-paging:2.6.1") 
     ksp(libs.androidx.room.compiler)
 
     // Paging
     implementation(libs.androidx.paging.runtime)
     implementation(libs.androidx.paging.common)
+
+    // Coil - 使用 api 确保依赖向下传递到 app 模块，以便配置全局单例
+    api(libs.coil.core)
 
     // DataStore
     implementation(libs.androidx.datastore.preferences)

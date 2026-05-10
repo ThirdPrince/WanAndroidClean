@@ -1,6 +1,9 @@
 package com.sample.wanandroidclean.data.di
 
 import androidx.room.Room
+import coil.ImageLoader
+import coil.disk.DiskCache
+import coil.memory.MemoryCache
 import com.sample.wanandroidclean.data.datasource.*
 import com.sample.wanandroidclean.data.local.AppDatabase
 import com.sample.wanandroidclean.data.remote.*
@@ -31,12 +34,15 @@ val dataModule = module {
     single { get<AppDatabase>().navigationDao() }
     single { get<AppDatabase>().articleDao() }
     single { get<AppDatabase>().remoteKeysDao() }
+    single { get<AppDatabase>().bannerDao() }
 
     // 2. DataSources
     single<SystemRemoteDataSource> { SystemRemoteDataSourceImpl(get()) }
     single<SystemLocalDataSource> { SystemLocalDataSourceImpl(get()) }
     single<NavigationRemoteDataSource> { NavigationRemoteDataSourceImpl(get()) }
     single<NavigationLocalDataSource> { NavigationLocalDataSourceImpl(get()) }
+    single<BannerRemoteDataSource> { BannerRemoteDataSourceImpl(get()) }
+    single<BannerLocalDataSource> { BannerLocalDataSourceImpl(get()) }
 
     // 3. Infrastructure
     single { CoroutineScope(Dispatchers.IO + SupervisorJob()) }
@@ -54,9 +60,27 @@ val dataModule = module {
             .build()
     }
 
-    // 4. Repositories
+    // 4. Coil ImageLoader 配置 (支持离线磁盘缓存)
+    single {
+        ImageLoader.Builder(androidContext())
+            .memoryCache {
+                MemoryCache.Builder(androidContext())
+                    .maxSizePercent(0.25)
+                    .build()
+            }
+            .diskCache {
+                DiskCache.Builder()
+                    .directory(androidContext().cacheDir.resolve("image_cache"))
+                    .maxSizePercent(0.02) // 磁盘空间的 2%
+                    .build()
+            }
+            .okHttpClient { get<OkHttpClient>() }
+            .build()
+    }
+
+    // 5. Repositories
     single<ArticleRepository> { ArticleRepositoryImpl(get(), get()) }
-    single<BannerRepository> { BannerRepositoryImpl(get()) }
+    single<BannerRepository> { BannerRepositoryImpl(get(), get()) }
     single<TopArticleRepository> { TopArticleRepositoryImpl(get()) }
     single<SystemRepository> { SystemRepositoryImpl(get(), get(), get()) }
     single<NavigationRepository> { NavigationRepositoryImpl(get(), get()) }
@@ -66,7 +90,7 @@ val dataModule = module {
     single<UserRepository> { UserRepositoryImpl(get()) }
     single<CollectionRepository> { CollectionRepositoryImpl(get()) }
 
-    // 5. Network
+    // 6. Network
     single<WanAndroidApi> {
         get<Retrofit>().create(WanAndroidApi::class.java)
     }

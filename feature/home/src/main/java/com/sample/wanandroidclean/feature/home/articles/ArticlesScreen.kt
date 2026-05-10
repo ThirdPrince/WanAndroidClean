@@ -37,8 +37,7 @@ fun ArticlesScreen(
     viewModel: ArticlesViewModel = koinViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    
-    // 1. 使用显式类型声明辅助 IDE 识别扩展函数，解决 collectAsLazyPagingItems 报错
+
     val pagingItems: LazyPagingItems<Article> = viewModel.articlesPagingData.collectAsLazyPagingItems()
 
     LazyColumn(

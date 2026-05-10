@@ -49,6 +49,7 @@ dependencies {
     implementation(project(":data"))
     implementation(project(":domain"))
 
+    // 修复：将连字符改为点号访问器
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
@@ -57,6 +58,9 @@ dependencies {
 
     // Navigation
     implementation(libs.navigation.compose)
+
+    // Coil - 在 app 层显式引入，确保能配置全局 ImageLoader
+    implementation(libs.coil.core)
 
     // Koin
     implementation(libs.koin.android)

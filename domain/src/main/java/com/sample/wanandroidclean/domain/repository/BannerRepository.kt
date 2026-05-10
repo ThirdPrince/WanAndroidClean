@@ -1,14 +1,14 @@
 package com.sample.wanandroidclean.domain.repository
 
 import com.sample.wanandroidclean.domain.entity.Banner
+import kotlinx.coroutines.flow.Flow
 
 /**
  * Interface for the banner repository.
  */
 interface BannerRepository {
-
     /**
-     * Fetches the list of banners from the data source.
+     * Returns a flow of banners, supporting offline-first logic.
      */
-    suspend fun getBanners(): Result<List<Banner>>
+    fun getBanners(): Flow<Result<List<Banner>>>
 }

@@ -4,7 +4,7 @@ import com.sample.wanandroidclean.domain.usecase.*
 import org.koin.dsl.module
 
 val domainModule = module {
-    factory { GetHomeScreenDataUseCase(get(), get(), get()) }
+    //factory { GetHomeScreenDataUseCase(get(), get(), get()) }
     factory { GetSystemCategoriesUseCase(get()) }
     factory { GetNavigationUseCase(get()) }
     factory { GetWxChaptersUseCase(get()) }
