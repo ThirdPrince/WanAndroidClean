@@ -13,9 +13,4 @@ interface ArticleRepository {
      * Fetches a flow of paging data for articles, supporting offline-first logic.
      */
     fun getArticlesPaging(): Flow<PagingData<Article>>
-
-    /**
-     * Standard fetch for a single page of articles (useful for headers or non-paging UI).
-     */
-    suspend fun getArticles(page: Int): Result<List<Article>>
 }

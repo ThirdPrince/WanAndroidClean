@@ -36,10 +36,4 @@ class ArticleRepositoryImpl(
         }
     }
 
-    override suspend fun getArticles(page: Int): Result<List<Article>> {
-        val articleDataResult = safeApiCall { api.getArticles(page) }
-        return articleDataResult.map { articleData ->
-            articleData.datas.map { it.toDomain() }
-        }
-    }
 }
