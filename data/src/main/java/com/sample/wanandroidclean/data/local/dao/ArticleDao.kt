@@ -12,8 +12,14 @@ interface ArticleDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(articles: List<ArticleEntity>)
 
-    @Query("SELECT * FROM articles ORDER BY page ASC, orderInPage ASC")
-    fun getArticles(): PagingSource<Int, ArticleEntity>
+    /**
+     * Get articles for a specific category (0 for Home, chapterId for Wx/Project)
+     */
+    @Query("SELECT * FROM articles WHERE categoryId = :categoryId ORDER BY page ASC, orderInPage ASC")
+    fun getArticlesByCategoryId(categoryId: Int): PagingSource<Int, ArticleEntity>
+
+    @Query("DELETE FROM articles WHERE categoryId = :categoryId")
+    suspend fun clearArticlesByCategoryId(categoryId: Int)
 
     @Query("DELETE FROM articles")
     suspend fun clearAll()

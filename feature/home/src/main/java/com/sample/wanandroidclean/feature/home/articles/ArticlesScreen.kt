@@ -12,6 +12,7 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -45,11 +46,11 @@ fun ArticlesScreen(
     val pagingItems: LazyPagingItems<Article> = viewModel.articlesPagingData.collectAsLazyPagingItems()
     
     val snackbarHostState = remember { SnackbarHostState() }
+    val pullToRefreshState = rememberPullToRefreshState()
     
-    // 综合刷新状态：分页列表正在刷新 或 Banner 正在刷新
+    // 综合刷新状态
     val isRefreshing = pagingItems.loadState.refresh is LoadState.Loading || uiState.isBannersLoading
 
-    // 监听刷新失败，弹出 Snackbar 提示
     LaunchedEffect(pagingItems.loadState.refresh) {
         if (pagingItems.loadState.refresh is LoadState.Error) {
             val error = (pagingItems.loadState.refresh as LoadState.Error).error
@@ -67,14 +68,17 @@ fun ArticlesScreen(
     }
 
     Scaffold(
-        snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
+        // 关键修复点：禁用内层 Scaffold 的自动缩进消费
+        // 解决底部 Tab 变高的问题，因为外层 MainScreen 已经处理过 Insets 了
+        contentWindowInsets = WindowInsets(0, 0, 0, 0)
     ) { innerPadding ->
-        // 使用 Material 3 官方下拉刷新组件
         PullToRefreshBox(
+            state = pullToRefreshState,
             isRefreshing = isRefreshing,
             onRefresh = {
-                pagingItems.refresh() // 刷新分页列表
-                viewModel.loadBanners() // 刷新 Banner
+                pagingItems.refresh()
+                viewModel.loadBanners()
             },
             modifier = Modifier
                 .fillMaxSize()
@@ -83,7 +87,6 @@ fun ArticlesScreen(
             LazyColumn(
                 modifier = Modifier.fillMaxSize().padding(horizontal = 8.dp)
             ) {
-                // 1. Banner
                 if (uiState.banners.isNotEmpty()) {
                     item {
                         BannerPager(
@@ -103,7 +106,6 @@ fun ArticlesScreen(
                     }
                 }
 
-                // 2. 分页列表内容
                 items(
                     count = pagingItems.itemCount,
                     key = pagingItems.itemKey { it.id },
@@ -120,16 +122,12 @@ fun ArticlesScreen(
                     }
                 }
 
-                // 3. 渲染加载更多状态（底部）
                 renderAppendState(pagingItems)
             }
         }
     }
 }
 
-/**
- * 仅处理列表末尾的加载状态
- */
 private fun LazyListScope.renderAppendState(pagingItems: LazyPagingItems<Article>) {
     pagingItems.apply {
         when (loadState.append) {

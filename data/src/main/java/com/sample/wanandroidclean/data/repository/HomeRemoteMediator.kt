@@ -7,6 +7,7 @@ import androidx.paging.RemoteMediator
 import androidx.room.withTransaction
 import com.sample.wanandroidclean.data.local.AppDatabase
 import com.sample.wanandroidclean.data.local.entity.ArticleEntity
+import com.sample.wanandroidclean.data.local.entity.BannerEntity
 import com.sample.wanandroidclean.data.local.entity.HomeRemoteKeys
 import com.sample.wanandroidclean.data.remote.WanAndroidApi
 
@@ -21,7 +22,10 @@ class HomeRemoteMediator(
         state: PagingState<Int, ArticleEntity>
     ): MediatorResult {
         val page = when (loadType) {
-            LoadType.REFRESH -> 0
+            LoadType.REFRESH -> {
+                val remoteKeys = getRemoteKeyClosestToCurrentPosition(state)
+                remoteKeys?.nextKey?.minus(1) ?: 0
+            }
             LoadType.PREPEND -> return MediatorResult.Success(endOfPaginationReached = true)
             LoadType.APPEND -> {
                 val remoteKeys = getRemoteKeyForLastItem(state)
@@ -32,14 +36,19 @@ class HomeRemoteMediator(
         }
 
         try {
-            // 1. 获取普通文章
+            // 1. 获取网络数据
             val response = api.getArticles(page)
-            val articlesDto = response.data.datas.toMutableList()
+            val articlesDto = response.data.datas
             
-            // 2. 如果是第一页，尝试并行获取置顶文章 (仅供展示，实际根据业务需求合并)
-            // 注意：为了持久化顺序，置顶文章可以标记 isTop = true 存入 DB
-            val topArticlesDto = if (page == 0) {
+            // 2. 如果是第一页刷新，同步刷新置顶文章和 Banner
+            val topArticlesDto = if (loadType == LoadType.REFRESH && page == 0) {
                 try { api.getTopArticles().data } catch (e: Exception) { emptyList() }
+            } else {
+                emptyList()
+            }
+
+            val bannersDto = if (loadType == LoadType.REFRESH && page == 0) {
+                try { api.getBanners().data } catch (e: Exception) { emptyList() }
             } else {
                 emptyList()
             }
@@ -47,22 +56,32 @@ class HomeRemoteMediator(
             val endOfPaginationReached = articlesDto.isEmpty() || page >= response.data.pageCount
 
             database.withTransaction {
+                // 3. 如果是刷新，清理旧数据
                 if (loadType == LoadType.REFRESH) {
                     database.remoteKeysDao().clearRemoteKeys()
-                    database.articleDao().clearAll()
+                    database.articleDao().clearArticlesByCategoryId(0)
+                    if (bannersDto.isNotEmpty()) {
+                        database.bannerDao().clearBanners()
+                    }
                 }
 
                 val prevKey = if (page == 0) null else page - 1
                 val nextKey = if (endOfPaginationReached) null else page + 1
                 
-                // 处理置顶文章 (page 标记为 -1 或特殊处理以确保排在最前)
-                val topEntities = topArticlesDto.mapIndexed { index, dto ->
-                    ArticleEntity.fromDomain(dto.toDomain(isTop = true), -1, index)
+                // 4. 转换并持久化 Banner
+                if (bannersDto.isNotEmpty()) {
+                    val bannerEntities = bannersDto.mapIndexed { index, dto ->
+                        BannerEntity(dto.id, dto.imagePath, dto.title, dto.url, index)
+                    }
+                    database.bannerDao().insertBanners(bannerEntities)
                 }
-                
-                // 处理普通文章
+
+                // 5. 转换并持久化文章 (首页 categoryId = 0)
+                val topEntities = topArticlesDto.mapIndexed { index, dto ->
+                    ArticleEntity.fromDomain(dto.toDomain(isTop = true), 0, -1, index)
+                }
                 val articleEntities = articlesDto.mapIndexed { index, dto ->
-                    ArticleEntity.fromDomain(dto.toDomain(isTop = false), page, index)
+                    ArticleEntity.fromDomain(dto.toDomain(isTop = false), 0, page, index)
                 }
 
                 val allEntities = topEntities + articleEntities
@@ -84,5 +103,13 @@ class HomeRemoteMediator(
             ?.let { article ->
                 database.remoteKeysDao().getRemoteKeys(article.id)
             }
+    }
+
+    private suspend fun getRemoteKeyClosestToCurrentPosition(state: PagingState<Int, ArticleEntity>): HomeRemoteKeys? {
+        return state.anchorPosition?.let { position ->
+            state.closestItemToPosition(position)?.id?.let { articleId ->
+                database.remoteKeysDao().getRemoteKeys(articleId)
+            }
+        }
     }
 }

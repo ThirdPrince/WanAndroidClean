@@ -2,17 +2,8 @@ package com.sample.wanandroidclean.data.local
 
 import androidx.room.Database
 import androidx.room.RoomDatabase
-import com.sample.wanandroidclean.data.local.dao.ArticleDao
-import com.sample.wanandroidclean.data.local.dao.BannerDao
-import com.sample.wanandroidclean.data.local.dao.HomeRemoteKeysDao
-import com.sample.wanandroidclean.data.local.dao.NavigationDao
-import com.sample.wanandroidclean.data.local.dao.SystemDao
-import com.sample.wanandroidclean.data.local.entity.ArticleEntity
-import com.sample.wanandroidclean.data.local.entity.BannerEntity
-import com.sample.wanandroidclean.data.local.entity.HomeRemoteKeys
-import com.sample.wanandroidclean.data.local.entity.NavigationArticleEntity
-import com.sample.wanandroidclean.data.local.entity.NavigationEntity
-import com.sample.wanandroidclean.data.local.entity.SystemCategoryEntity
+import com.sample.wanandroidclean.data.local.dao.*
+import com.sample.wanandroidclean.data.local.entity.*
 
 @Database(
     entities = [
@@ -21,9 +12,10 @@ import com.sample.wanandroidclean.data.local.entity.SystemCategoryEntity
         NavigationArticleEntity::class,
         ArticleEntity::class,
         HomeRemoteKeys::class,
-        BannerEntity::class
+        BannerEntity::class,
+        WxRemoteKeys::class
     ],
-    version = 5,
+    version = 6,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -32,4 +24,5 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun articleDao(): ArticleDao
     abstract fun remoteKeysDao(): HomeRemoteKeysDao
     abstract fun bannerDao(): BannerDao
+    abstract fun wxRemoteKeysDao(): WxRemoteKeysDao
 }

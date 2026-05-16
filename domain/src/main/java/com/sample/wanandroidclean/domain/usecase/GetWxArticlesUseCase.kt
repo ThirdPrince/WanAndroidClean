@@ -1,12 +1,19 @@
 package com.sample.wanandroidclean.domain.usecase
 
+import androidx.paging.PagingData
 import com.sample.wanandroidclean.domain.entity.Article
 import com.sample.wanandroidclean.domain.repository.WxArticleRepository
+import kotlinx.coroutines.flow.Flow
 
 /**
- * Use case for getting the list of articles for a specific WeChat article chapter.
+ * Use case for getting paginated articles for a specific WeChat article chapter.
+ * Updated to support Paging 3 and match the new repository interface.
  */
 class GetWxArticlesUseCase(private val repository: WxArticleRepository) {
 
-    suspend operator fun invoke(chapterId: Int, page: Int): Result<List<Article>> = repository.getWxArticles(chapterId, page)
+    /**
+     * Returns a flow of paging data for articles in a specific chapter.
+     */
+    operator fun invoke(chapterId: Int): Flow<PagingData<Article>> = 
+        repository.getWxArticlesPaging(chapterId)
 }

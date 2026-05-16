@@ -7,7 +7,6 @@ java {
     targetCompatibility = JavaVersion.VERSION_17
 }
 
-// 显式配置 Kotlin JVM 目标版本为 17
 kotlin {
     compilerOptions {
         jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
@@ -15,8 +14,8 @@ kotlin {
 }
 
 dependencies {
-    // Paging
-    implementation(libs.androidx.paging.common)
+    // 修正：使用 api 确保 PagingData 类型在引用 domain 的 feature 模块中可见
+    api(libs.androidx.paging.common)
 
     // Coroutines
     implementation(libs.kotlinx.coroutines.core)

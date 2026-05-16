@@ -4,7 +4,6 @@ import androidx.room.Room
 import coil.ImageLoader
 import coil.disk.DiskCache
 import coil.memory.MemoryCache
-import coil.request.CachePolicy
 import com.sample.wanandroidclean.data.datasource.*
 import com.sample.wanandroidclean.data.local.AppDatabase
 import com.sample.wanandroidclean.data.remote.*
@@ -14,7 +13,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.serialization.json.Json
-import okhttp3.Cache
+import okhttp3.Interceptor
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -22,7 +21,6 @@ import org.koin.android.ext.koin.androidContext
 import org.koin.dsl.module
 import retrofit2.Retrofit
 import retrofit2.converter.kotlinx.serialization.asConverterFactory
-import java.io.File
 
 val dataModule = module {
     // 1. Database & Dao
@@ -38,6 +36,7 @@ val dataModule = module {
     single { get<AppDatabase>().articleDao() }
     single { get<AppDatabase>().remoteKeysDao() }
     single { get<AppDatabase>().bannerDao() }
+    single { get<AppDatabase>().wxRemoteKeysDao() }
 
     // 2. DataSources
     single<SystemRemoteDataSource> { SystemRemoteDataSourceImpl(get()) }
@@ -52,25 +51,27 @@ val dataModule = module {
     single { CookieStorage(androidContext(), get()) }
     single { PersistentCookieJar(get()) }
 
-    // 配置基础 OkHttpClient 增加 HTTP 缓存目录
     single {
         val loggingInterceptor = HttpLoggingInterceptor().apply {
             level = HttpLoggingInterceptor.Level.BODY
         }
         
-        // 关键：给 OkHttp 增加 10MB 的物理缓存目录，辅助图片“落地”
-        val httpCacheDirectory = File(androidContext().cacheDir, "http_cache")
-        val cache = Cache(httpCacheDirectory, 10L * 1024 * 1024)
-
         OkHttpClient.Builder()
-            .cache(cache)
             .addInterceptor(loggingInterceptor)
             .cookieJar(get<PersistentCookieJar>())
             .build()
     }
 
-    // 4. Coil ImageLoader 配置 (强力离线缓存版)
+    // 4. Coil ImageLoader 配置 (支持强力离线缓存)
     single {
+        val forceCacheInterceptor = Interceptor { chain ->
+            val response = chain.proceed(chain.request())
+            response.newBuilder()
+                .header("Cache-Control", "public, max-age=2592000")
+                .removeHeader("Pragma")
+                .build()
+        }
+
         ImageLoader.Builder(androidContext())
             .memoryCache {
                 MemoryCache.Builder(androidContext())
@@ -80,12 +81,15 @@ val dataModule = module {
             .diskCache {
                 DiskCache.Builder()
                     .directory(androidContext().cacheDir.resolve("image_cache"))
-                    .maxSizeBytes(100L * 1024 * 1024) // 强制 100MB 空间
+                    .maxSizePercent(0.02)
                     .build()
             }
-            .respectCacheHeaders(false) // 忽略服务器缓存头，强制缓存
+            .okHttpClient {
+                get<OkHttpClient>().newBuilder()
+                    .addNetworkInterceptor(forceCacheInterceptor)
+                    .build()
+            }
             .build()
-
     }
 
     // 5. Repositories
@@ -93,8 +97,8 @@ val dataModule = module {
     single<BannerRepository> { BannerRepositoryImpl(get(), get()) }
     single<TopArticleRepository> { TopArticleRepositoryImpl(get()) }
     single<SystemRepository> { SystemRepositoryImpl(get(), get(), get()) }
-    single<NavigationRepository> { NavigationRepositoryImpl(get(),get()) }
-    single<WxArticleRepository> { WxArticleRepositoryImpl(get()) }
+    single<NavigationRepository> { NavigationRepositoryImpl(get(), get()) }
+    single<WxArticleRepository> { WxArticleRepositoryImpl(get(), get()) }
     single<ProjectRepository> { ProjectRepositoryImpl(get()) }
     single<UserInfoRepository> { UserInfoRepositoryImpl(get()) }
     single<UserRepository> { UserRepositoryImpl(get()) }

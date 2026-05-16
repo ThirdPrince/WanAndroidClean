@@ -30,7 +30,8 @@ class ArticleRepositoryImpl(
                 enablePlaceholders = false
             ),
             remoteMediator = HomeRemoteMediator(api, database),
-            pagingSourceFactory = { database.articleDao().getArticles() }
+            // 修正：使用带 categoryId 的查询方法，首页传入 0
+            pagingSourceFactory = { database.articleDao().getArticlesByCategoryId(0) }
         ).flow.map { pagingData ->
             pagingData.map { it.toDomain() }
         }
