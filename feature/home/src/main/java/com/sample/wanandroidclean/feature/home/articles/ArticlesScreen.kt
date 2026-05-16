@@ -11,11 +11,13 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -26,107 +28,127 @@ import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemContentType
 import androidx.paging.compose.itemKey
 import coil.compose.AsyncImage
+import coil.request.CachePolicy
+import coil.request.ImageRequest
 import com.sample.wanandroidclean.domain.entity.Article
 import com.sample.wanandroidclean.domain.entity.Banner
 import kotlinx.coroutines.delay
 import org.koin.androidx.compose.koinViewModel
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ArticlesScreen(
     onArticleClick: (Article) -> Unit,
     viewModel: ArticlesViewModel = koinViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-
     val pagingItems: LazyPagingItems<Article> = viewModel.articlesPagingData.collectAsLazyPagingItems()
+    
+    val snackbarHostState = remember { SnackbarHostState() }
+    
+    // 综合刷新状态：分页列表正在刷新 或 Banner 正在刷新
+    val isRefreshing = pagingItems.loadState.refresh is LoadState.Loading || uiState.isBannersLoading
 
-    LazyColumn(
-        modifier = Modifier.fillMaxSize().padding(horizontal = 8.dp)
-    ) {
-        // Banner 部分
-        if (uiState.banners.isNotEmpty()) {
-            item {
-                BannerPager(
-                    banners = uiState.banners,
-                    onBannerClick = { banner ->
-                        val dummyArticle = Article(
-                            id = banner.id,
-                            title = banner.title,
-                            author = "",
-                            shareUser = "",
-                            link = banner.url
+    // 监听刷新失败，弹出 Snackbar 提示
+    LaunchedEffect(pagingItems.loadState.refresh) {
+        if (pagingItems.loadState.refresh is LoadState.Error) {
+            val error = (pagingItems.loadState.refresh as LoadState.Error).error
+            snackbarHostState.showSnackbar(
+                message = error.localizedMessage ?: "加载失败，请重试",
+                actionLabel = "重试",
+                duration = SnackbarDuration.Short
+            ).also { result ->
+                if (result == SnackbarResult.ActionPerformed) {
+                    pagingItems.refresh()
+                    viewModel.loadBanners()
+                }
+            }
+        }
+    }
+
+    Scaffold(
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
+    ) { innerPadding ->
+        // 使用 Material 3 官方下拉刷新组件
+        PullToRefreshBox(
+            isRefreshing = isRefreshing,
+            onRefresh = {
+                pagingItems.refresh() // 刷新分页列表
+                viewModel.loadBanners() // 刷新 Banner
+            },
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+        ) {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize().padding(horizontal = 8.dp)
+            ) {
+                // 1. Banner
+                if (uiState.banners.isNotEmpty()) {
+                    item {
+                        BannerPager(
+                            banners = uiState.banners,
+                            onBannerClick = { banner ->
+                                val dummyArticle = Article(
+                                    id = banner.id,
+                                    title = banner.title,
+                                    author = "",
+                                    shareUser = "",
+                                    link = banner.url
+                                )
+                                onArticleClick(dummyArticle)
+                            }
                         )
-                        onArticleClick(dummyArticle)
+                        Spacer(modifier = Modifier.height(8.dp))
                     }
-                )
-                Spacer(modifier = Modifier.height(8.dp))
+                }
+
+                // 2. 分页列表内容
+                items(
+                    count = pagingItems.itemCount,
+                    key = pagingItems.itemKey { it.id },
+                    contentType = pagingItems.itemContentType { "article" }
+                ) { index ->
+                    val article = pagingItems[index]
+                    if (article != null) {
+                        ArticleItem(
+                            article = article,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { onArticleClick(article) }
+                        )
+                    }
+                }
+
+                // 3. 渲染加载更多状态（底部）
+                renderAppendState(pagingItems)
             }
         }
-
-        // 2. 渲染分页文章列表
-        items(
-            count = pagingItems.itemCount,
-            key = pagingItems.itemKey { it.id },
-            contentType = pagingItems.itemContentType { "article" }
-        ) { index ->
-            val article = pagingItems[index]
-            if (article != null) {
-                ArticleItem(
-                    article = article,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { onArticleClick(article) }
-                )
-            }
-        }
-
-        // 3. 处理分页加载状态
-        renderPagingState(pagingItems)
     }
 }
 
 /**
- * 将加载状态提取为扩展函数，增强代码可读性
+ * 仅处理列表末尾的加载状态
  */
-private fun LazyListScope.renderPagingState(pagingItems: LazyPagingItems<Article>) {
+private fun LazyListScope.renderAppendState(pagingItems: LazyPagingItems<Article>) {
     pagingItems.apply {
-        when {
-            // 初始加载中 (且本地暂无缓存)
-            loadState.refresh is LoadState.Loading && itemCount == 0 -> {
-                item {
-                    Box(modifier = Modifier.fillParentMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator()
-                    }
-                }
-            }
-            // 加载更多中
-            loadState.append is LoadState.Loading -> {
+        when (loadState.append) {
+            is LoadState.Loading -> {
                 item {
                     Box(modifier = Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
                         CircularProgressIndicator(modifier = Modifier.size(24.dp))
                     }
                 }
             }
-            // 刷新失败
-            loadState.refresh is LoadState.Error -> {
-                val error = loadState.refresh as LoadState.Error
+            is LoadState.Error -> {
                 item {
                     ErrorMessage(
-                        message = error.error.localizedMessage ?: "Refresh failed",
+                        message = "加载失败，请点击重试",
                         onClickRetry = { retry() }
                     )
                 }
             }
-            // 加载更多失败
-            loadState.append is LoadState.Error -> {
-                val error = loadState.append as LoadState.Error
-                item {
-                    ErrorMessage(
-                        message = error.error.localizedMessage ?: "Load more failed",
-                        onClickRetry = { retry() }
-                    )
-                }
-            }
+            else -> {}
         }
     }
 }
@@ -137,10 +159,9 @@ fun ErrorMessage(message: String, onClickRetry: () -> Unit) {
         modifier = Modifier.fillMaxWidth().padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(text = message, color = MaterialTheme.colorScheme.error)
-        Spacer(modifier = Modifier.height(8.dp))
-        Button(onClick = onClickRetry) {
-            Text("Retry")
+        Text(text = message, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+        TextButton(onClick = onClickRetry) {
+            Text("重试")
         }
     }
 }
@@ -153,6 +174,7 @@ fun BannerPager(
 ) {
     val pagerState = rememberPagerState(pageCount = { banners.size })
     var isDragged by remember { mutableStateOf(false) }
+    val context = LocalContext.current
 
     LaunchedEffect(isDragged) {
         if (!isDragged) {
@@ -168,11 +190,20 @@ fun BannerPager(
     Box(modifier = Modifier.fillMaxWidth().height(200.dp)) {
         HorizontalPager(state = pagerState) { index ->
             val banner = banners[index]
+            val request = remember(banner.imagePath) {
+                ImageRequest.Builder(context)
+                    .data(banner.imagePath)
+                    .crossfade(true)
+                    .diskCachePolicy(CachePolicy.ENABLED)
+                    .build()
+            }
             AsyncImage(
-                model = banner.imagePath,
+                model = request,
                 contentDescription = banner.title,
                 contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize().clickable { onBannerClick(banner) }
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clickable { onBannerClick(banner) }
             )
         }
         val isDraggedState = pagerState.interactionSource.collectIsDraggedAsState()
@@ -192,11 +223,11 @@ fun ArticleItem(article: Article, modifier: Modifier = Modifier) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 if (article.isTop) {
                     Box(modifier = Modifier.clip(RoundedCornerShape(4.dp)).background(MaterialTheme.colorScheme.primary).padding(horizontal = 6.dp, vertical = 2.dp)) {
-                        Text(text = "Top", color = MaterialTheme.colorScheme.onPrimary, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                        Text(text = "置顶", color = MaterialTheme.colorScheme.onPrimary, fontSize = 10.sp, fontWeight = FontWeight.Bold)
                     }
                     Spacer(modifier = Modifier.width(8.dp))
                 }
-                Text(text = "Author: ${article.author.ifEmpty { article.shareUser }}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(text = "作者: ${article.author.ifEmpty { article.shareUser }}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
     }

@@ -33,7 +33,7 @@ dependencies {
     // Room
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
-    implementation("androidx.room:room-paging:2.6.1") 
+    implementation(libs.androidx.room.paging) // 使用 Version Catalog 访问器
     ksp(libs.androidx.room.compiler)
 
     // Paging
