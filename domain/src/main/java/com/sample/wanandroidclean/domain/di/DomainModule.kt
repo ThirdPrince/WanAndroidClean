@@ -8,7 +8,7 @@ val domainModule = module {
     factory { GetNavigationUseCase(get()) }
     factory { GetWxChaptersUseCase(get()) }
     factory { GetWxArticlesUseCase(get()) }
-    factory { GetWxArticlesPagingUseCase(get()) } // 补全这一行
+    factory { GetWxArticlesPagingUseCase(get()) } // 补全公众号分页 UseCase
     factory { GetProjectChaptersUseCase(get()) }
     factory { GetProjectArticlesUseCase(get()) }
     factory { GetUserInfoUseCase(get()) }

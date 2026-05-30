@@ -13,9 +13,12 @@ import com.sample.wanandroidclean.data.local.entity.*
         ArticleEntity::class,
         HomeRemoteKeys::class,
         BannerEntity::class,
-        WxRemoteKeys::class
+        WxRemoteKeys::class,
+        WxChapterEntity::class,
+        ProjectRemoteKeys::class,
+        ProjectChapterEntity::class
     ],
-    version = 6,
+    version = 8,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -25,4 +28,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun remoteKeysDao(): HomeRemoteKeysDao
     abstract fun bannerDao(): BannerDao
     abstract fun wxRemoteKeysDao(): WxRemoteKeysDao
+    abstract fun wxChapterDao(): WxChapterDao
+    abstract fun projectRemoteKeysDao(): ProjectRemoteKeysDao
+    abstract fun projectChapterDao(): ProjectChapterDao
 }

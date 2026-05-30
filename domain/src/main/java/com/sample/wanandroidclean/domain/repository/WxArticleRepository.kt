@@ -11,9 +11,9 @@ import kotlinx.coroutines.flow.Flow
 interface WxArticleRepository {
 
     /**
-     * Fetches the list of WeChat article chapters.
+     * Returns a flow of WeChat article chapters, supporting offline-first logic.
      */
-    suspend fun getWxChapters(): Result<List<WxChapter>>
+    fun getWxChapters(): Flow<Result<List<WxChapter>>>
 
     /**
      * Returns a flow of paging data for a specific WeChat article chapter.

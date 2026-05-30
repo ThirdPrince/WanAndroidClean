@@ -4,6 +4,7 @@ import androidx.room.Room
 import coil.ImageLoader
 import coil.disk.DiskCache
 import coil.memory.MemoryCache
+import coil.request.CachePolicy
 import com.sample.wanandroidclean.data.datasource.*
 import com.sample.wanandroidclean.data.local.AppDatabase
 import com.sample.wanandroidclean.data.remote.*
@@ -13,7 +14,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.serialization.json.Json
-import okhttp3.Interceptor
+import okhttp3.Cache
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -21,6 +22,7 @@ import org.koin.android.ext.koin.androidContext
 import org.koin.dsl.module
 import retrofit2.Retrofit
 import retrofit2.converter.kotlinx.serialization.asConverterFactory
+import java.io.File
 
 val dataModule = module {
     // 1. Database & Dao
@@ -37,6 +39,7 @@ val dataModule = module {
     single { get<AppDatabase>().remoteKeysDao() }
     single { get<AppDatabase>().bannerDao() }
     single { get<AppDatabase>().wxRemoteKeysDao() }
+    single { get<AppDatabase>().wxChapterDao() }
 
     // 2. DataSources
     single<SystemRemoteDataSource> { SystemRemoteDataSourceImpl(get()) }
@@ -45,6 +48,8 @@ val dataModule = module {
     single<NavigationLocalDataSource> { NavigationLocalDataSourceImpl(get()) }
     single<BannerRemoteDataSource> { BannerRemoteDataSourceImpl(get()) }
     single<BannerLocalDataSource> { BannerLocalDataSourceImpl(get()) }
+    single<WxLocalDataSource> { WxLocalDataSourceImpl(get()) }
+    single<WxRemoteDataSource> { WxRemoteDataSourceImpl(get()) }
 
     // 3. Infrastructure
     single { CoroutineScope(Dispatchers.IO + SupervisorJob()) }
@@ -55,40 +60,33 @@ val dataModule = module {
         val loggingInterceptor = HttpLoggingInterceptor().apply {
             level = HttpLoggingInterceptor.Level.BODY
         }
-        
+        val httpCacheDirectory = File(androidContext().cacheDir, "http_cache")
+        val cache = Cache(httpCacheDirectory, 10L * 1024 * 1024)
+
         OkHttpClient.Builder()
+            .cache(cache)
             .addInterceptor(loggingInterceptor)
             .cookieJar(get<PersistentCookieJar>())
             .build()
     }
 
-    // 4. Coil ImageLoader 配置 (支持强力离线缓存)
+    // 4. Coil ImageLoader
     single {
-        val forceCacheInterceptor = Interceptor { chain ->
-            val response = chain.proceed(chain.request())
-            response.newBuilder()
-                .header("Cache-Control", "public, max-age=2592000")
-                .removeHeader("Pragma")
-                .build()
-        }
-
         ImageLoader.Builder(androidContext())
             .memoryCache {
-                MemoryCache.Builder(androidContext())
-                    .maxSizePercent(0.25)
-                    .build()
+                MemoryCache.Builder(androidContext()).maxSizePercent(0.25).build()
             }
             .diskCache {
                 DiskCache.Builder()
                     .directory(androidContext().cacheDir.resolve("image_cache"))
-                    .maxSizePercent(0.02)
+                    .maxSizeBytes(100L * 1024 * 1024)
                     .build()
             }
-            .okHttpClient {
-                get<OkHttpClient>().newBuilder()
-                    .addNetworkInterceptor(forceCacheInterceptor)
-                    .build()
-            }
+            .diskCachePolicy(CachePolicy.ENABLED)
+            .memoryCachePolicy(CachePolicy.ENABLED)
+            .networkCachePolicy(CachePolicy.ENABLED)
+            .okHttpClient { get<OkHttpClient>() }
+            .crossfade(true)
             .build()
     }
 
@@ -98,7 +96,7 @@ val dataModule = module {
     single<TopArticleRepository> { TopArticleRepositoryImpl(get()) }
     single<SystemRepository> { SystemRepositoryImpl(get(), get(), get()) }
     single<NavigationRepository> { NavigationRepositoryImpl(get(), get()) }
-    single<WxArticleRepository> { WxArticleRepositoryImpl(get(), get()) }
+    single<WxArticleRepository> { WxArticleRepositoryImpl(get(), get(), get(), get()) }
     single<ProjectRepository> { ProjectRepositoryImpl(get()) }
     single<UserInfoRepository> { UserInfoRepositoryImpl(get()) }
     single<UserRepository> { UserRepositoryImpl(get()) }

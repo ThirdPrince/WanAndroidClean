@@ -21,18 +21,26 @@ class WxArticleViewModel(
     private val getWxArticlesPagingUseCase: GetWxArticlesPagingUseCase
 ) : ViewModel() {
 
-    // 章节目录依然使用常规流
-    val uiState: StateFlow<WxArticleUiState> = flow {
-        emit(WxArticleUiState(isLoading = true))
-        getWxChaptersUseCase().fold(
-            onSuccess = { emit(WxArticleUiState(chapters = it)) },
-            onFailure = { emit(WxArticleUiState(error = it.localizedMessage)) }
+    /**
+     * 响应式公众号章节状态流。
+     * 直接观察 UseCase 返回的 Flow (包含数据库缓存 + 网络刷新结果)。
+     */
+    val uiState: StateFlow<WxArticleUiState> = getWxChaptersUseCase()
+        .map { result ->
+            result.fold(
+                onSuccess = { chapters ->
+                    WxArticleUiState(chapters = chapters, isLoading = false)
+                },
+                onFailure = { e ->
+                    WxArticleUiState(error = e.localizedMessage, isLoading = false)
+                }
+            )
+        }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = WxArticleUiState(isLoading = true)
         )
-    }.stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5000),
-        initialValue = WxArticleUiState(isLoading = true)
-    )
 
     // 用于缓存不同 chapterId 的分页流，避免重复创建
     private val pagingDataFlowMap = mutableMapOf<Int, Flow<PagingData<Article>>>()

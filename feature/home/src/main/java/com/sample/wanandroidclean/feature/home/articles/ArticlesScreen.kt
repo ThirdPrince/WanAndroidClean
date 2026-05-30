@@ -48,16 +48,16 @@ fun ArticlesScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val pullToRefreshState = rememberPullToRefreshState()
     
-    // 综合刷新状态
+    // 综合刷新状态：分页列表正在刷新 或 Banner 正在加载
     val isRefreshing = pagingItems.loadState.refresh is LoadState.Loading || uiState.isBannersLoading
 
+    // 监听刷新失败，弹出 Snackbar
     LaunchedEffect(pagingItems.loadState.refresh) {
-        if (pagingItems.loadState.refresh is LoadState.Error) {
-            val error = (pagingItems.loadState.refresh as LoadState.Error).error
+        val refreshState = pagingItems.loadState.refresh
+        if (refreshState is LoadState.Error) {
             snackbarHostState.showSnackbar(
-                message = error.localizedMessage ?: "加载失败，请重试",
-                actionLabel = "重试",
-                duration = SnackbarDuration.Short
+                message = refreshState.error.localizedMessage ?: "刷新失败",
+                actionLabel = "重试"
             ).also { result ->
                 if (result == SnackbarResult.ActionPerformed) {
                     pagingItems.refresh()
@@ -69,8 +69,8 @@ fun ArticlesScreen(
 
     Scaffold(
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
-        // 关键修复点：禁用内层 Scaffold 的自动缩进消费
-        // 解决底部 Tab 变高的问题，因为外层 MainScreen 已经处理过 Insets 了
+        // 关键修复：禁用内层 Scaffold 的缩进消费。
+        // 这将解决底部 Tab 变高及黑色间距问题。
         contentWindowInsets = WindowInsets(0, 0, 0, 0)
     ) { innerPadding ->
         PullToRefreshBox(
@@ -87,6 +87,7 @@ fun ArticlesScreen(
             LazyColumn(
                 modifier = Modifier.fillMaxSize().padding(horizontal = 8.dp)
             ) {
+                // 1. Banner
                 if (uiState.banners.isNotEmpty()) {
                     item {
                         BannerPager(
@@ -106,6 +107,7 @@ fun ArticlesScreen(
                     }
                 }
 
+                // 2. 分页文章列表
                 items(
                     count = pagingItems.itemCount,
                     key = pagingItems.itemKey { it.id },
@@ -122,6 +124,7 @@ fun ArticlesScreen(
                     }
                 }
 
+                // 3. 底部加载更多状态
                 renderAppendState(pagingItems)
             }
         }
