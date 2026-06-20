@@ -1,7 +1,9 @@
 package com.sample.wanandroidclean.domain.repository
 
+import androidx.paging.PagingData
 import com.sample.wanandroidclean.domain.entity.Article
 import com.sample.wanandroidclean.domain.entity.ProjectChapter
+import kotlinx.coroutines.flow.Flow
 
 /**
  * Interface for the project repository.
@@ -9,12 +11,12 @@ import com.sample.wanandroidclean.domain.entity.ProjectChapter
 interface ProjectRepository {
 
     /**
-     * Fetches the list of project chapters.
+     * Returns a flow of project chapters, supporting offline-first logic.
      */
-    suspend fun getProjectChapters(): Result<List<ProjectChapter>>
+    fun getProjectChapters(): Flow<Result<List<ProjectChapter>>>
 
     /**
-     * Fetches the list of articles for a specific project chapter.
+     * Returns a flow of paging data for a specific project chapter.
      */
-    suspend fun getProjectArticles(page: Int, cid: Int): Result<List<Article>>
+    fun getProjectArticlesPaging(chapterId: Int): Flow<PagingData<Article>>
 }

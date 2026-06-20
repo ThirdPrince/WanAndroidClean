@@ -40,6 +40,8 @@ val dataModule = module {
     single { get<AppDatabase>().bannerDao() }
     single { get<AppDatabase>().wxRemoteKeysDao() }
     single { get<AppDatabase>().wxChapterDao() }
+    single { get<AppDatabase>().projectChapterDao() }
+    single { get<AppDatabase>().projectRemoteKeysDao() }
 
     // 2. DataSources
     single<SystemRemoteDataSource> { SystemRemoteDataSourceImpl(get()) }
@@ -50,6 +52,8 @@ val dataModule = module {
     single<BannerLocalDataSource> { BannerLocalDataSourceImpl(get()) }
     single<WxLocalDataSource> { WxLocalDataSourceImpl(get()) }
     single<WxRemoteDataSource> { WxRemoteDataSourceImpl(get()) }
+    single<ProjectLocalDataSource> { ProjectLocalDataSourceImpl(get()) }
+    single<ProjectRemoteDataSource> { ProjectRemoteDataSourceImpl(get()) }
 
     // 3. Infrastructure
     single { CoroutineScope(Dispatchers.IO + SupervisorJob()) }
@@ -97,9 +101,9 @@ val dataModule = module {
     single<SystemRepository> { SystemRepositoryImpl(get(), get(), get()) }
     single<NavigationRepository> { NavigationRepositoryImpl(get(), get()) }
     single<WxArticleRepository> { WxArticleRepositoryImpl(get(), get(), get(), get()) }
-    single<ProjectRepository> { ProjectRepositoryImpl(get()) }
+    single<ProjectRepository> { ProjectRepositoryImpl(get(), get(), get(), get()) }
     single<UserInfoRepository> { UserInfoRepositoryImpl(get()) }
-    single<UserRepository> { UserRepositoryImpl(get()) }
+    single<UserRepository> { UserRepositoryImpl(get(), get()) }
     single<CollectionRepository> { CollectionRepositoryImpl(get()) }
 
     // 6. Network

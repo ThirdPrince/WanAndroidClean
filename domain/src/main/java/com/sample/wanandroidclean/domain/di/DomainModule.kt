@@ -8,7 +8,7 @@ val domainModule = module {
     factory { GetNavigationUseCase(get()) }
     factory { GetWxChaptersUseCase(get()) }
     factory { GetWxArticlesUseCase(get()) }
-    factory { GetWxArticlesPagingUseCase(get()) } // 补全公众号分页 UseCase
+    factory { GetWxArticlesPagingUseCase(get()) }
     factory { GetProjectChaptersUseCase(get()) }
     factory { GetProjectArticlesUseCase(get()) }
     factory { GetUserInfoUseCase(get()) }
@@ -17,4 +17,5 @@ val domainModule = module {
     factory { GetSystemArticlesUseCase(get()) }
     factory { GetArticlesPagingUseCase(get()) }
     factory { GetBannersUseCase(get()) }
+    factory { ToggleCollectUseCase(get()) }
 }

@@ -9,5 +9,6 @@ data class Article(
     val author: String,
     val shareUser: String,
     val link: String,
-    val isTop: Boolean = false
+    val isTop: Boolean = false,
+    val collect: Boolean = false // Added to track collection status
 )

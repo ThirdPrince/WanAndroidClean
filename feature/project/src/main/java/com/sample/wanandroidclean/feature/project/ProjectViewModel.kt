@@ -2,70 +2,74 @@ package com.sample.wanandroidclean.feature.project
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.paging.PagingData
+import androidx.paging.cachedIn
 import com.sample.wanandroidclean.domain.entity.Article
 import com.sample.wanandroidclean.domain.entity.ProjectChapter
+import com.sample.wanandroidclean.domain.repository.UserRepository
 import com.sample.wanandroidclean.domain.usecase.GetProjectArticlesUseCase
 import com.sample.wanandroidclean.domain.usecase.GetProjectChaptersUseCase
+import com.sample.wanandroidclean.domain.usecase.ToggleCollectUseCase
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
 data class ProjectUiState(
     val isLoading: Boolean = false,
     val chapters: List<ProjectChapter> = emptyList(),
-    val articles: Map<Int, List<Article>> = emptyMap(), // Keyed by chapterId
     val error: String? = null
 )
 
 class ProjectViewModel(
     private val getProjectChaptersUseCase: GetProjectChaptersUseCase,
-    private val getProjectArticlesUseCase: GetProjectArticlesUseCase
+    private val getProjectArticlesUseCase: GetProjectArticlesUseCase,
+    private val toggleCollectUseCase: ToggleCollectUseCase,
+    private val userRepository: UserRepository
 ) : ViewModel() {
 
-    // 使用单独的流来管理已加载的文章，方便按需更新
-    private val _articlesMap = MutableStateFlow<Map<Int, List<Article>>>(emptyMap())
+    // 观察登录状态
+    val isLoggedIn: StateFlow<Boolean> = userRepository.isUserLoggedIn
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
     /**
      * 响应式 UI 状态流。
-     * 将“分类加载逻辑”与“已加载文章映射”进行实时合并。
+     * 直接观察分类列表。
      */
-    val uiState: StateFlow<ProjectUiState> = flow {
-        // 1. 获取项目分类数据
-        emit(getProjectChaptersUseCase())
-    }
-    .combine(_articlesMap) { chaptersResult, articlesMap ->
-        // 2. 将结果转换/合并为 UI 状态
-        chaptersResult.fold(
-            onSuccess = { chapters ->
-                ProjectUiState(
-                    isLoading = false,
-                    chapters = chapters,
-                    articles = articlesMap
-                )
-            },
-            onFailure = { e ->
-                ProjectUiState(
-                    isLoading = false,
-                    error = e.localizedMessage ?: "An unknown error occurred"
-                )
-            }
+    val uiState: StateFlow<ProjectUiState> = getProjectChaptersUseCase()
+        .map { result ->
+            result.fold(
+                onSuccess = { chapters ->
+                    ProjectUiState(isLoading = false, chapters = chapters)
+                },
+                onFailure = { e ->
+                    ProjectUiState(isLoading = false, error = e.localizedMessage)
+                }
+            )
+        }
+        .onStart { emit(ProjectUiState(isLoading = true)) }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = ProjectUiState(isLoading = true)
         )
-    }
-    .stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5000),
-        initialValue = ProjectUiState(isLoading = true) // 初始显示加载中
-    )
+
+    private val pagingDataFlowMap = mutableMapOf<Int, Flow<PagingData<Article>>>()
 
     /**
-     * 由 UI (Pager) 触发，加载特定分类下的文章。
+     * 获取分页数据流。
      */
-    fun loadArticlesForChapter(chapterId: Int, page: Int = 1) {
+    fun getArticlesPaging(chapterId: Int): Flow<PagingData<Article>> {
+        return pagingDataFlowMap.getOrPut(chapterId) {
+            getProjectArticlesUseCase(chapterId)
+                .cachedIn(viewModelScope)
+        }
+    }
+
+    /**
+     * 切换收藏状态
+     */
+    fun toggleCollect(article: Article) {
         viewModelScope.launch {
-            getProjectArticlesUseCase(page, chapterId).onSuccess { articles ->
-                _articlesMap.update { currentMap ->
-                    currentMap + (chapterId to articles)
-                }
-            }
+            toggleCollectUseCase(article.id, !article.collect)
         }
     }
 }

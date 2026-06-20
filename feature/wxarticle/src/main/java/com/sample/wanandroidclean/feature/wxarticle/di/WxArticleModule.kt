@@ -5,5 +5,6 @@ import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.dsl.module
 
 val wxArticleModule = module {
-    viewModel { WxArticleViewModel(get(), get()) }
+    // 补全依赖注入：现在需要 4 个参数
+    viewModel { WxArticleViewModel(get(), get(), get(), get()) }
 }

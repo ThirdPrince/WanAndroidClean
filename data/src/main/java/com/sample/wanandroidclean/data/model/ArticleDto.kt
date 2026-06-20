@@ -14,7 +14,8 @@ data class ArticleDto(
     val title: String = "",
     val author: String = "",
     val shareUser: String = "",
-    val link: String = ""
+    val link: String = "",
+    val collect: Boolean = false // Added to match API response
 ) {
     fun toDomain(isTop: Boolean = false): Article = Article(
         id = if (originId != 0) originId else id,
@@ -22,6 +23,7 @@ data class ArticleDto(
         author = author.decodeHtml(), // 作者名有时也包含转义
         shareUser = shareUser.decodeHtml(),
         link = link,
-        isTop = isTop
+        isTop = isTop,
+        collect = collect
     )
 }

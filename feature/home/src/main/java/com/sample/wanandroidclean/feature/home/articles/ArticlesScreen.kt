@@ -10,6 +10,9 @@ import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
@@ -17,6 +20,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -40,6 +44,7 @@ import org.koin.androidx.compose.koinViewModel
 @Composable
 fun ArticlesScreen(
     onArticleClick: (Article) -> Unit,
+    onLoginClick: () -> Unit, // 新增：跳转登录回调
     viewModel: ArticlesViewModel = koinViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -48,10 +53,8 @@ fun ArticlesScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val pullToRefreshState = rememberPullToRefreshState()
     
-    // 综合刷新状态：分页列表正在刷新 或 Banner 正在加载
     val isRefreshing = pagingItems.loadState.refresh is LoadState.Loading || uiState.isBannersLoading
 
-    // 监听刷新失败，弹出 Snackbar
     LaunchedEffect(pagingItems.loadState.refresh) {
         val refreshState = pagingItems.loadState.refresh
         if (refreshState is LoadState.Error) {
@@ -69,8 +72,6 @@ fun ArticlesScreen(
 
     Scaffold(
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
-        // 关键修复：禁用内层 Scaffold 的缩进消费。
-        // 这将解决底部 Tab 变高及黑色间距问题。
         contentWindowInsets = WindowInsets(0, 0, 0, 0)
     ) { innerPadding ->
         PullToRefreshBox(
@@ -87,7 +88,6 @@ fun ArticlesScreen(
             LazyColumn(
                 modifier = Modifier.fillMaxSize().padding(horizontal = 8.dp)
             ) {
-                // 1. Banner
                 if (uiState.banners.isNotEmpty()) {
                     item {
                         BannerPager(
@@ -107,7 +107,6 @@ fun ArticlesScreen(
                     }
                 }
 
-                // 2. 分页文章列表
                 items(
                     count = pagingItems.itemCount,
                     key = pagingItems.itemKey { it.id },
@@ -117,15 +116,73 @@ fun ArticlesScreen(
                     if (article != null) {
                         ArticleItem(
                             article = article,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { onArticleClick(article) }
+                            onArticleClick = { onArticleClick(article) },
+                            onCollectClick = {
+                                // 核心逻辑：判断登录状态
+                                if (uiState.isLoggedIn) {
+                                    viewModel.toggleCollect(article)
+                                } else {
+                                    onLoginClick()
+                                }
+                            },
+                            modifier = Modifier.fillMaxWidth()
                         )
                     }
                 }
 
-                // 3. 底部加载更多状态
                 renderAppendState(pagingItems)
+            }
+        }
+    }
+}
+
+@Composable
+fun ArticleItem(
+    article: Article,
+    onArticleClick: () -> Unit,
+    onCollectClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier
+            .padding(vertical = 5.dp)
+            .clickable(onClick = onArticleClick),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(text = article.title, style = MaterialTheme.typography.titleMedium)
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (article.isTop) {
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(4.dp))
+                                .background(MaterialTheme.colorScheme.primary)
+                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                        ) {
+                            Text(text = "置顶", color = MaterialTheme.colorScheme.onPrimary, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                        }
+                        Spacer(modifier = Modifier.width(8.dp))
+                    }
+                    Text(
+                        text = "作者: ${article.author.ifEmpty { article.shareUser }}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
+            // 收藏按钮
+            IconButton(onClick = onCollectClick) {
+                Icon(
+                    imageVector = if (article.collect) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                    contentDescription = "Collect",
+                    tint = if (article.collect) Color.Red else MaterialTheme.colorScheme.outline
+                )
             }
         }
     }
@@ -209,27 +266,5 @@ fun BannerPager(
         }
         val isDraggedState = pagerState.interactionSource.collectIsDraggedAsState()
         isDragged = isDraggedState.value
-    }
-}
-
-@Composable
-fun ArticleItem(article: Article, modifier: Modifier = Modifier) {
-    Card(
-        modifier = modifier.padding(vertical = 5.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(text = article.title, style = MaterialTheme.typography.titleMedium)
-            Spacer(modifier = Modifier.height(8.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                if (article.isTop) {
-                    Box(modifier = Modifier.clip(RoundedCornerShape(4.dp)).background(MaterialTheme.colorScheme.primary).padding(horizontal = 6.dp, vertical = 2.dp)) {
-                        Text(text = "置顶", color = MaterialTheme.colorScheme.onPrimary, fontSize = 10.sp, fontWeight = FontWeight.Bold)
-                    }
-                    Spacer(modifier = Modifier.width(8.dp))
-                }
-                Text(text = "作者: ${article.author.ifEmpty { article.shareUser }}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-        }
     }
 }

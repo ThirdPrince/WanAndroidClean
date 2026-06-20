@@ -48,6 +48,12 @@ interface WanAndroidApi {
     @GET("lg/collect/list/{page}/json")
     suspend fun getCollections(@Path("page") page: Int): BaseResponse<ArticleData>
 
+    @POST("lg/collect/{id}/json")
+    suspend fun collect(@Path("id") id: Int): BaseResponse<Unit?>
+
+    @POST("lg/uncollect_originId/{id}/json")
+    suspend fun uncollect(@Path("id") id: Int): BaseResponse<Unit?>
+
     // 体系文章列表
     @GET("article/list/{page}/json")
     suspend fun getSystemArticles(@Path("page") page: Int, @Query("cid") cid: Int): BaseResponse<ArticleData>

@@ -7,7 +7,9 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import okhttp3.Cookie
 import okhttp3.HttpUrl
@@ -16,8 +18,7 @@ import java.util.concurrent.ConcurrentHashMap
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "cookie_prefs")
 
 /**
- * Optimized Cookie storage using DataStore with an in-memory cache to avoid blocking.
- * The CoroutineScope is now injected for better testability and lifecycle management.
+ * Optimized Cookie storage using DataStore with an in-memory cache.
  */
 class CookieStorage(
     private val context: Context,
@@ -25,6 +26,29 @@ class CookieStorage(
 ) {
 
     private val cookieCache = ConcurrentHashMap<String, List<Cookie>>()
+
+    /**
+     * Exposes a Flow of all stored cookies across all hosts.
+     * Useful for observing login status.
+     */
+    val cookies: Flow<List<Cookie>> = context.dataStore.data.map { preferences ->
+        val allCookies = mutableListOf<Cookie>()
+        preferences.asMap().forEach { (key, value) ->
+            if (value is String) {
+                val host = key.name
+                val baseUrl = HttpUrl.Builder()
+                    .scheme("https")
+                    .host(host)
+                    .build()
+                value.split("|").forEach { cookieString ->
+                    Cookie.parse(baseUrl, cookieString)?.let { cookie -> 
+                        allCookies.add(cookie) // 修正：添加解析后的 cookie 对象而非原始字符串
+                    }
+                }
+            }
+        }
+        allCookies
+    }
 
     init {
         // Pre-load cookies into memory from DataStore
@@ -50,23 +74,17 @@ class CookieStorage(
         }
     }
 
-    /**
-     * Non-blocking save: updates memory immediately and persists in background.
-     */
     fun saveCookies(url: HttpUrl, cookies: List<Cookie>) {
         val host = url.host
         val currentCookies = cookieCache[host]?.toMutableList() ?: mutableListOf()
         
-        // Merge new cookies with existing ones
         cookies.forEach { newCookie ->
             currentCookies.removeAll { it.name == newCookie.name }
             currentCookies.add(newCookie)
         }
         
-        // Update memory cache
         cookieCache[host] = currentCookies
 
-        // Persist to DataStore asynchronously
         scope.launch {
             context.dataStore.edit { preferences ->
                 preferences[stringPreferencesKey(host)] = currentCookies.joinToString("|") { it.toString() }
@@ -74,9 +92,6 @@ class CookieStorage(
         }
     }
 
-    /**
-     * Fast return from memory cache, never blocks the caller.
-     */
     fun getCookies(url: HttpUrl): List<Cookie> {
         return cookieCache[url.host] ?: emptyList()
     }
