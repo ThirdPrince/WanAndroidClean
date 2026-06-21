@@ -30,11 +30,23 @@ class ArticleRepositoryImpl(
                 enablePlaceholders = false
             ),
             remoteMediator = HomeRemoteMediator(api, database),
-            // 修正：使用带 categoryId 的查询方法，首页传入 0
             pagingSourceFactory = { database.articleDao().getArticlesByCategoryId(0) }
         ).flow.map { pagingData ->
             pagingData.map { it.toDomain() }
         }
     }
 
+    override suspend fun getArticles(page: Int): Result<List<Article>> {
+        val articleDataResult = safeApiCall { api.getArticles(page) }
+        return articleDataResult.map { articleData ->
+            articleData.datas.map { it.toDomain() }
+        }
+    }
+
+    /**
+     * 关键：在这里处理本地数据库的更新，隐藏 Data 层细节
+     */
+    override suspend fun updateLocalCollectStatus(id: Int, collect: Boolean) {
+        database.articleDao().updateCollectStatus(id, collect)
+    }
 }

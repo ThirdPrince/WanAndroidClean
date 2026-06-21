@@ -14,8 +14,7 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -30,19 +29,21 @@ import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemContentType
 import androidx.paging.compose.itemKey
 import com.sample.wanandroidclean.domain.entity.Article
+import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun ProjectScreen(
     onArticleClick: (Article) -> Unit,
-    onLoginClick: () -> Unit, // 新增：跳转登录回调
+    onLoginClick: () -> Unit,
     viewModel: ProjectViewModel = koinViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val isLoggedIn by viewModel.isLoggedIn.collectAsStateWithLifecycle()
     val chapters = uiState.chapters
     val pagerState = rememberPagerState(pageCount = { chapters.size })
+    val scope = rememberCoroutineScope()
 
     if (uiState.isLoading && chapters.isEmpty()) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -60,7 +61,7 @@ fun ProjectScreen(
                         Tab(
                             modifier = Modifier.height(48.dp),
                             selected = pagerState.currentPage == index,
-                            onClick = { /* 已经在 Pager 状态中处理 */ },
+                            onClick = { scope.launch { pagerState.animateScrollToPage(index) } },
                             text = { Text(text = chapter.name) }
                         )
                     }
@@ -71,14 +72,12 @@ fun ProjectScreen(
                     modifier = Modifier.weight(1f)
                 ) { pageIndex ->
                     val chapterId = chapters[pageIndex].id
-                    // 核心修复：获取分页数据流并转换
                     val pagingItems: LazyPagingItems<Article> = viewModel.getArticlesPaging(chapterId).collectAsLazyPagingItems()
 
                     ArticlesList(
                         pagingItems = pagingItems,
                         onArticleClick = onArticleClick,
                         onCollectClick = { article ->
-                            // 核心业务逻辑：判断登录状态
                             if (isLoggedIn) {
                                 viewModel.toggleCollect(article)
                             } else {
@@ -123,8 +122,6 @@ fun ArticlesList(
                     )
                 }
             }
-
-            // 处理分页加载状态
             renderLoadState(pagingItems)
         }
     }
@@ -132,26 +129,10 @@ fun ArticlesList(
 
 private fun LazyListScope.renderLoadState(pagingItems: LazyPagingItems<Article>) {
     pagingItems.apply {
-        when {
-            loadState.append is LoadState.Loading -> {
-                item {
-                    Box(modifier = Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(modifier = Modifier.size(24.dp))
-                    }
-                }
-            }
-            loadState.refresh is LoadState.Error || loadState.append is LoadState.Error -> {
-                val e = if (loadState.refresh is LoadState.Error) loadState.refresh as LoadState.Error else loadState.append as LoadState.Error
-                item {
-                    Column(
-                        modifier = Modifier.fillMaxWidth().padding(16.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(text = e.error.localizedMessage ?: "网络错误", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
-                        TextButton(onClick = { retry() }) {
-                            Text("点击重试")
-                        }
-                    }
+        if (loadState.append is LoadState.Loading) {
+            item {
+                Box(modifier = Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(modifier = Modifier.size(24.dp))
                 }
             }
         }
@@ -165,6 +146,11 @@ fun ArticleItem(
     onCollectClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    // 关键优化：局部拦截状态，实现点击即亮，无须等待数据库刷新，彻底消除闪烁
+    var isCollectedLocal by remember(article.id, article.collect) { 
+        mutableStateOf(article.collect) 
+    }
+
     Card(
         modifier = modifier
             .padding(vertical = 5.dp)
@@ -180,31 +166,23 @@ fun ArticleItem(
                 Spacer(modifier = Modifier.height(8.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     if (article.isTop) {
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(4.dp))
-                                .background(MaterialTheme.colorScheme.primary)
-                                .padding(horizontal = 6.dp, vertical = 2.dp)
-                        ) {
+                        Box(modifier = Modifier.clip(RoundedCornerShape(4.dp)).background(MaterialTheme.colorScheme.primary).padding(horizontal = 6.dp, vertical = 2.dp)) {
                             Text(text = "置顶", color = MaterialTheme.colorScheme.onPrimary, fontSize = 10.sp, fontWeight = FontWeight.Bold)
                         }
                         Spacer(modifier = Modifier.width(8.dp))
                     }
-                    val authorText = article.author.ifEmpty { article.shareUser }
-                    Text(
-                        text = "作者: $authorText",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    Text(text = "作者: ${article.author.ifEmpty { article.shareUser }}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
 
-            // 收藏按钮
-            IconButton(onClick = onCollectClick) {
+            IconButton(onClick = {
+                isCollectedLocal = !isCollectedLocal // 瞬间反馈
+                onCollectClick()
+            }) {
                 Icon(
-                    imageVector = if (article.collect) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                    imageVector = if (isCollectedLocal) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
                     contentDescription = "Collect",
-                    tint = if (article.collect) Color.Red else MaterialTheme.colorScheme.outline
+                    tint = if (isCollectedLocal) Color.Red else MaterialTheme.colorScheme.outline
                 )
             }
         }

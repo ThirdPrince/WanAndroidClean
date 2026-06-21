@@ -74,12 +74,10 @@ val dataModule = module {
             .build()
     }
 
-    // 4. Coil ImageLoader
+    // 4. Coil ImageLoader (实现强力离线缓存)
     single {
         ImageLoader.Builder(androidContext())
-            .memoryCache {
-                MemoryCache.Builder(androidContext()).maxSizePercent(0.25).build()
-            }
+            .memoryCache { MemoryCache.Builder(androidContext()).maxSizePercent(0.25).build() }
             .diskCache {
                 DiskCache.Builder()
                     .directory(androidContext().cacheDir.resolve("image_cache"))
@@ -104,7 +102,8 @@ val dataModule = module {
     single<ProjectRepository> { ProjectRepositoryImpl(get(), get(), get(), get()) }
     single<UserInfoRepository> { UserInfoRepositoryImpl(get()) }
     single<UserRepository> { UserRepositoryImpl(get(), get()) }
-    single<CollectionRepository> { CollectionRepositoryImpl(get()) }
+    // 修正：补全 2 个注入参数
+    single<CollectionRepository> { CollectionRepositoryImpl(get(), get()) }
 
     // 6. Network
     single<WanAndroidApi> {

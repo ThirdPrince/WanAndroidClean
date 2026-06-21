@@ -5,7 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -13,6 +13,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -22,12 +23,12 @@ import org.koin.androidx.compose.koinViewModel
 @Composable
 fun MineScreen(
     onLoginClick: () -> Unit,
-    onCollectionClick: () -> Unit, // 新增收藏点击回调
+    onCollectionClick: () -> Unit,
     viewModel: MineViewModel = koinViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    if (uiState.isLoading) {
+    if (uiState.isLoading && uiState.userInfo == null) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             CircularProgressIndicator()
         }
@@ -50,17 +51,32 @@ fun MineScreen(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column {
-                    MineMenuItem(icon = Icons.Default.Star, title = "我的积分", value = uiState.userInfo?.coinCount?.toString())
+                    MineMenuItem(
+                        icon = Icons.Default.Star, 
+                        title = "我的积分", 
+                        value = uiState.userInfo?.coinCount?.toString()
+                    )
                     MineMenuItem(icon = Icons.Default.Share, title = "我的分享")
                     MineMenuItem(
                         icon = Icons.Default.Favorite, 
                         title = "我的收藏",
-                        onClick = onCollectionClick // 绑定点击事件
+                        onClick = onCollectionClick
                     )
-                    MineMenuItem(icon = Icons.Default.Info, title = "稍后阅读")
-                    MineMenuItem(icon = Icons.Default.Info, title = "开源项目")
+                    // 修正点：改用基础图标库图标，解决 Unresolved reference 报错
+                    MineMenuItem(icon = Icons.Default.Schedule, title = "稍后阅读")
+                    MineMenuItem(icon = Icons.Default.Build, title = "开源项目")
                     MineMenuItem(icon = Icons.Default.Info, title = "关于作者")
                     MineMenuItem(icon = Icons.Default.Settings, title = "系统设置")
+                    
+                    if (uiState.userInfo != null) {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        MineMenuItem(
+                            icon = Icons.AutoMirrored.Filled.ExitToApp,
+                            title = "退出登录",
+                            tint = MaterialTheme.colorScheme.error,
+                            onClick = { viewModel.logout() }
+                        )
+                    }
                 }
             }
         }
@@ -93,7 +109,7 @@ fun UserInfoHeader(userInfo: UserInfo) {
             Spacer(modifier = Modifier.height(12.dp))
             
             Text(
-                text = userInfo.username,
+                text = userInfo.nickname,
                 style = MaterialTheme.typography.titleLarge,
                 color = MaterialTheme.colorScheme.onPrimary
             )
@@ -152,6 +168,7 @@ fun MineMenuItem(
     icon: ImageVector, 
     title: String, 
     value: String? = null,
+    tint: Color = MaterialTheme.colorScheme.primary,
     onClick: () -> Unit = {}
 ) {
     Column(modifier = Modifier.clickable(onClick = onClick)) {
@@ -164,14 +181,14 @@ fun MineMenuItem(
             Icon(
                 imageVector = icon, 
                 contentDescription = title, 
-                tint = MaterialTheme.colorScheme.primary,
+                tint = tint,
                 modifier = Modifier.size(22.dp)
             )
             Spacer(modifier = Modifier.width(16.dp))
             Text(
                 text = title, 
                 style = MaterialTheme.typography.bodyLarge, 
-                color = MaterialTheme.colorScheme.onSurface,
+                color = if (tint == MaterialTheme.colorScheme.error) tint else MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.weight(1f)
             )
             

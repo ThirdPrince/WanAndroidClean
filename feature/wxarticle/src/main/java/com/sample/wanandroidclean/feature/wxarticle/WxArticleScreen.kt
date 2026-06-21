@@ -14,9 +14,7 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -80,7 +78,6 @@ fun WxArticleScreen(
                         pagingItems = pagingItems,
                         onArticleClick = onArticleClick,
                         onCollectClick = { article ->
-                            // 判断登录状态
                             if (isLoggedIn) {
                                 viewModel.toggleCollect(article)
                             } else {
@@ -109,9 +106,7 @@ fun ArticlesList(
         onRefresh = { pagingItems.refresh() },
         modifier = modifier.fillMaxSize()
     ) {
-        LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(horizontal = 8.dp)
-        ) {
+        LazyColumn(modifier = Modifier.fillMaxSize().padding(horizontal = 8.dp)) {
             items(
                 count = pagingItems.itemCount,
                 key = pagingItems.itemKey { it.id },
@@ -134,26 +129,10 @@ fun ArticlesList(
 
 private fun LazyListScope.renderLoadState(pagingItems: LazyPagingItems<Article>) {
     pagingItems.apply {
-        when {
-            loadState.append is LoadState.Loading -> {
-                item {
-                    Box(modifier = Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(modifier = Modifier.size(24.dp))
-                    }
-                }
-            }
-            loadState.refresh is LoadState.Error || loadState.append is LoadState.Error -> {
-                val e = if (loadState.refresh is LoadState.Error) loadState.refresh as LoadState.Error else loadState.append as LoadState.Error
-                item {
-                    Column(
-                        modifier = Modifier.fillMaxWidth().padding(16.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(text = e.error.localizedMessage ?: "网络错误", color = MaterialTheme.colorScheme.error)
-                        TextButton(onClick = { retry() }) {
-                            Text("点击重试")
-                        }
-                    }
+        if (loadState.append is LoadState.Loading) {
+            item {
+                Box(modifier = Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(modifier = Modifier.size(24.dp))
                 }
             }
         }
@@ -167,6 +146,11 @@ fun ArticleItem(
     onCollectClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    // 方案 C：使用局部拦截状态，实现“秒亮”且“不闪烁”
+    var isCollectedLocal by remember(article.id, article.collect) { 
+        mutableStateOf(article.collect) 
+    }
+
     Card(
         modifier = modifier
             .padding(vertical = 5.dp)
@@ -178,29 +162,27 @@ fun ArticleItem(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(modifier = Modifier.weight(1f)) {
+                Text(text = article.title, style = MaterialTheme.typography.titleMedium)
+                Spacer(modifier = Modifier.height(8.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     if (article.isTop) {
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(4.dp))
-                                .background(MaterialTheme.colorScheme.primary)
-                                .padding(horizontal = 6.dp, vertical = 2.dp)
-                        ) {
+                        Box(modifier = Modifier.clip(RoundedCornerShape(4.dp)).background(MaterialTheme.colorScheme.primary).padding(horizontal = 6.dp, vertical = 2.dp)) {
                             Text(text = "置顶", color = MaterialTheme.colorScheme.onPrimary, fontSize = 10.sp, fontWeight = FontWeight.Bold)
                         }
                         Spacer(modifier = Modifier.width(8.dp))
                     }
-                    Text(text = article.title, style = MaterialTheme.typography.titleMedium)
+                    Text(text = "作者: ${article.author.ifEmpty { article.shareUser }}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(text = "作者: ${article.author.ifEmpty { article.shareUser }}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
 
-            IconButton(onClick = onCollectClick) {
+            IconButton(onClick = {
+                isCollectedLocal = !isCollectedLocal // 瞬间变色
+                onCollectClick()
+            }) {
                 Icon(
-                    imageVector = if (article.collect) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                    imageVector = if (isCollectedLocal) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
                     contentDescription = "Collect",
-                    tint = if (article.collect) Color.Red else MaterialTheme.colorScheme.outline
+                    tint = if (isCollectedLocal) Color.Red else MaterialTheme.colorScheme.outline
                 )
             }
         }

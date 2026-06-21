@@ -15,16 +15,28 @@ class UserRepositoryImpl(
 ) : UserRepository {
 
     /**
-     * 观察登录状态。
-     * 通过检查 Cookie 存储中是否存在有效的 WanAndroid 登录标识来判断。
+     * 增强版登录状态检查。
+     * 同时检查多个关键 Cookie 标识 (loginUserName 或 token_pass)，确保状态识别的即时性。
      */
     override val isUserLoggedIn: Flow<Boolean> = cookieStorage.cookies.map { cookies ->
-        // 玩Android 登录成功的关键标识是存在名为 "loginUserName" 且值不为空的 Cookie
-        cookies.any { it.name == "loginUserName" && it.value.isNotEmpty() }
+        cookies.any { 
+            (it.name == "loginUserName" || it.name == "token_pass") && it.value.isNotEmpty() 
+        }
     }
 
     override suspend fun login(username: String, password: String): Result<UserInfo> {
         val result = safeApiCall { wanAndroidApi.login(username, password) }
         return result.map { it.toDomain() }
+    }
+
+    override suspend fun logout(): Result<Unit> {
+        // 对于玩Android，登出通常只需要清理本地保存的 Cookie 即可。
+        // 如果服务端有登出接口，也可以在此调用。
+        return try {
+            cookieStorage.clearAll()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
 }

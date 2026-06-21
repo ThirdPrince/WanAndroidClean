@@ -16,7 +16,8 @@ import kotlinx.coroutines.launch
 data class ProjectUiState(
     val isLoading: Boolean = false,
     val chapters: List<ProjectChapter> = emptyList(),
-    val error: String? = null
+    val error: String? = null,
+    val isLoggedIn: Boolean = false
 )
 
 class ProjectViewModel(
@@ -26,22 +27,21 @@ class ProjectViewModel(
     private val userRepository: UserRepository
 ) : ViewModel() {
 
-    // 观察登录状态
+    // 独立的登录状态流
     val isLoggedIn: StateFlow<Boolean> = userRepository.isUserLoggedIn
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
     /**
-     * 响应式 UI 状态流。
-     * 直接观察分类列表。
+     * 响应式 UI 状态流 (管理章节目录)
      */
     val uiState: StateFlow<ProjectUiState> = getProjectChaptersUseCase()
-        .map { result ->
+        .combine(isLoggedIn) { result, loggedIn ->
             result.fold(
-                onSuccess = { chapters ->
-                    ProjectUiState(isLoading = false, chapters = chapters)
+                onSuccess = { chapters -> 
+                    ProjectUiState(isLoading = false, chapters = chapters, isLoggedIn = loggedIn) 
                 },
-                onFailure = { e ->
-                    ProjectUiState(isLoading = false, error = e.localizedMessage)
+                onFailure = { e -> 
+                    ProjectUiState(isLoading = false, error = e.localizedMessage, isLoggedIn = loggedIn) 
                 }
             )
         }
@@ -55,7 +55,7 @@ class ProjectViewModel(
     private val pagingDataFlowMap = mutableMapOf<Int, Flow<PagingData<Article>>>()
 
     /**
-     * 获取分页数据流。
+     * 获取分页流 (方案 A：直接返回原始分页流，由数据库驱动 UI)
      */
     fun getArticlesPaging(chapterId: Int): Flow<PagingData<Article>> {
         return pagingDataFlowMap.getOrPut(chapterId) {
@@ -65,7 +65,8 @@ class ProjectViewModel(
     }
 
     /**
-     * 切换收藏状态
+     * 切换收藏。
+     * 直接调用 UseCase：更新本地库 -> 发请求 -> 失败回滚。
      */
     fun toggleCollect(article: Article) {
         viewModelScope.launch {

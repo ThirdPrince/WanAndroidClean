@@ -17,8 +17,7 @@ import kotlinx.coroutines.launch
 data class HomeUiState(
     val banners: List<Banner> = emptyList(),
     val isBannersLoading: Boolean = false,
-    val bannersError: String? = null,
-    val isLoggedIn: Boolean = false // 增加登录状态追踪
+    val bannersError: String? = null
 )
 
 class ArticlesViewModel(
@@ -30,7 +29,7 @@ class ArticlesViewModel(
 
     private val refreshTrigger = MutableSharedFlow<Unit>(replay = 1).apply { tryEmit(Unit) }
 
-    // 观察登录状态
+    // 独立的登录状态流，UI 直接观察它
     val isLoggedIn: StateFlow<Boolean> = userRepository.isUserLoggedIn
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
@@ -39,45 +38,33 @@ class ArticlesViewModel(
      */
     @OptIn(ExperimentalCoroutinesApi::class)
     val uiState: StateFlow<HomeUiState> = refreshTrigger
-        .flatMapLatest { 
-            bannerRepository.getBanners()
-                .map { result ->
-                    result.fold(
-                        onSuccess = { banners ->
-                            HomeUiState(banners = banners, isBannersLoading = false, isLoggedIn = isLoggedIn.value)
-                        },
-                        onFailure = { e ->
-                            HomeUiState(bannersError = e.localizedMessage, isBannersLoading = false, isLoggedIn = isLoggedIn.value)
-                        }
-                    )
-                }
+        .flatMapLatest { bannerRepository.getBanners() }
+        .map { result ->
+            result.fold(
+                onSuccess = { banners -> HomeUiState(banners = banners, isBannersLoading = false) },
+                onFailure = { e -> HomeUiState(bannersError = e.localizedMessage, isBannersLoading = false) }
+            )
         }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = HomeUiState(isBannersLoading = true)
-        )
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), HomeUiState(isBannersLoading = true))
 
     /**
-     * 响应式分页文章数据流
+     * 方案 A：纯数据库驱动的分页流。
+     * 直接观察数据库，不进行内存拦截。
      */
     val articlesPagingData: Flow<PagingData<Article>> = getArticlesPagingUseCase()
         .cachedIn(viewModelScope)
 
     fun loadBanners() {
-        viewModelScope.launch {
-            refreshTrigger.emit(Unit)
-        }
+        viewModelScope.launch { refreshTrigger.emit(Unit) }
     }
 
     /**
-     * 切换收藏状态
+     * 切换收藏。
+     * 调用 UseCase，它会负责：更新本地 DB -> 发网络请求 -> 失败回滚 DB。
+     * UI 会通过 Paging 自动感应到数据库变化并刷新。
      */
     fun toggleCollect(article: Article) {
         viewModelScope.launch {
-            // 注意：这里仅执行接口调用。
-            // 由于我们使用的是 Paging 3 + Room 离线优先，
-            // 完美的体验应该是：接口成功后更新本地数据库对应文章的 collect 字段，UI 会自动刷新。
             toggleCollectUseCase(article.id, !article.collect)
         }
     }

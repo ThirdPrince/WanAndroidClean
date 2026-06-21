@@ -22,7 +22,7 @@ class WxRemoteMediator(
         state: PagingState<Int, ArticleEntity>
     ): MediatorResult {
         val page = when (loadType) {
-            LoadType.REFRESH -> 1 // WanAndroid WxArticle page starts from 1
+            LoadType.REFRESH -> 1
             LoadType.PREPEND -> return MediatorResult.Success(endOfPaginationReached = true)
             LoadType.APPEND -> {
                 val remoteKeys = getRemoteKeyForLastItem(state)
@@ -34,24 +34,24 @@ class WxRemoteMediator(
 
         try {
             val response = api.getWxArticles(chapterId, page)
-            val articles = response.data.datas
-            val endOfPaginationReached = articles.isEmpty() || page >= response.data.pageCount
+            val articlesDto = response.data.datas
+            val endOfPaginationReached = articlesDto.isEmpty() || page >= response.data.pageCount
 
             database.withTransaction {
                 if (loadType == LoadType.REFRESH) {
                     database.wxRemoteKeysDao().clearRemoteKeys(chapterId)
-                    // We don't clear all articles here because other chapters might have data.
-                    // Instead, we should ideally clear articles for this specific categoryId.
-                    // Let's add a method to ArticleDao for this.
+                    database.articleDao().clearArticlesByCategoryId(chapterId)
                 }
                 val prevKey = if (page == 1) null else page - 1
                 val nextKey = if (endOfPaginationReached) null else page + 1
-                val keys = articles.map {
+                val keys = articlesDto.map {
                     WxRemoteKeys(articleId = it.id, categoryId = chapterId, prevKey = prevKey, nextKey = nextKey)
                 }
                 database.wxRemoteKeysDao().insertAll(keys)
-                database.articleDao().insertAll(articles.mapIndexed { index, articleDto ->
-                    ArticleEntity.fromDomain(articleDto.toDomain(), chapterId, page, index)
+                
+                // 关键点：使用带 collect 状态的 DTO 转换为 Entity 存入 DB
+                database.articleDao().insertAll(articlesDto.mapIndexed { index, dto ->
+                    ArticleEntity.fromDomain(dto.toDomain(), chapterId, page, index)
                 })
             }
             return MediatorResult.Success(endOfPaginationReached = endOfPaginationReached)

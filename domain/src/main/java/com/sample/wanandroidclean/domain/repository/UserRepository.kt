@@ -17,4 +17,9 @@ interface UserRepository {
      * Performs login with the given username and password.
      */
     suspend fun login(username: String, password: String): Result<UserInfo>
+
+    /**
+     * Performs logout by clearing local session/cookies.
+     */
+    suspend fun logout(): Result<Unit>
 }

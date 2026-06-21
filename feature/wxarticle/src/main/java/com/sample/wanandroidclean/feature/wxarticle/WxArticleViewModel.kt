@@ -16,7 +16,8 @@ import kotlinx.coroutines.launch
 data class WxArticleUiState(
     val isLoading: Boolean = false,
     val chapters: List<WxChapter> = emptyList(),
-    val error: String? = null
+    val error: String? = null,
+    val isLoggedIn: Boolean = false
 )
 
 class WxArticleViewModel(
@@ -26,33 +27,28 @@ class WxArticleViewModel(
     private val userRepository: UserRepository
 ) : ViewModel() {
 
-    // 观察登录状态
+    // 独立的登录状态流
     val isLoggedIn: StateFlow<Boolean> = userRepository.isUserLoggedIn
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
     /**
-     * 响应式公众号章节状态流
+     * 响应式 UI 状态流
      */
     val uiState: StateFlow<WxArticleUiState> = getWxChaptersUseCase()
-        .map { result ->
+        .combine(isLoggedIn) { result, loggedIn ->
             result.fold(
-                onSuccess = { chapters ->
-                    WxArticleUiState(chapters = chapters, isLoading = false)
-                },
-                onFailure = { e ->
-                    WxArticleUiState(error = e.localizedMessage, isLoading = false)
-                }
+                onSuccess = { chapters -> WxArticleUiState(chapters = chapters, isLoading = false, isLoggedIn = loggedIn) },
+                onFailure = { e -> WxArticleUiState(error = e.localizedMessage, isLoading = false, isLoggedIn = loggedIn) }
             )
         }
         .onStart { emit(WxArticleUiState(isLoading = true)) }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = WxArticleUiState(isLoading = true)
-        )
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), WxArticleUiState(isLoading = true))
 
     private val pagingDataFlowMap = mutableMapOf<Int, Flow<PagingData<Article>>>()
 
+    /**
+     * 获取分页流（纯数据库驱动）
+     */
     fun getArticlesPaging(chapterId: Int): Flow<PagingData<Article>> {
         return pagingDataFlowMap.getOrPut(chapterId) {
             getWxArticlesPagingUseCase(chapterId)
@@ -61,7 +57,8 @@ class WxArticleViewModel(
     }
 
     /**
-     * 切换收藏状态
+     * 切换收藏。
+     * 直接由 UseCase 负责数据库乐观更新和网络同步。
      */
     fun toggleCollect(article: Article) {
         viewModelScope.launch {

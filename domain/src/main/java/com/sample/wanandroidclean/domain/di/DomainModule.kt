@@ -13,9 +13,10 @@ val domainModule = module {
     factory { GetProjectArticlesUseCase(get()) }
     factory { GetUserInfoUseCase(get()) }
     factory { LoginUseCase(get()) }
+    factory { LogoutUseCase(get()) }
     factory { GetCollectionsUseCase(get()) }
     factory { GetSystemArticlesUseCase(get()) }
     factory { GetArticlesPagingUseCase(get()) }
     factory { GetBannersUseCase(get()) }
-    factory { ToggleCollectUseCase(get()) }
+    factory { ToggleCollectUseCase(get(), get()) }
 }

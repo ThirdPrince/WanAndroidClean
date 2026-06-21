@@ -34,6 +34,9 @@ dependencies {
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.lifecycle.runtime.compose)
 
+    // 添加扩展图标库依赖
+    implementation(libs.androidx.compose.material.icons.extended)
+
     // Koin
     implementation(libs.koin.androidx.compose)
 }

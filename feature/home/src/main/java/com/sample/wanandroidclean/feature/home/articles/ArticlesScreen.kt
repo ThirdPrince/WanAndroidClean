@@ -44,10 +44,11 @@ import org.koin.androidx.compose.koinViewModel
 @Composable
 fun ArticlesScreen(
     onArticleClick: (Article) -> Unit,
-    onLoginClick: () -> Unit, // 新增：跳转登录回调
+    onLoginClick: () -> Unit,
     viewModel: ArticlesViewModel = koinViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val isLoggedIn by viewModel.isLoggedIn.collectAsStateWithLifecycle()
     val pagingItems: LazyPagingItems<Article> = viewModel.articlesPagingData.collectAsLazyPagingItems()
     
     val snackbarHostState = remember { SnackbarHostState() }
@@ -118,8 +119,7 @@ fun ArticlesScreen(
                             article = article,
                             onArticleClick = { onArticleClick(article) },
                             onCollectClick = {
-                                // 核心逻辑：判断登录状态
-                                if (uiState.isLoggedIn) {
+                                if (isLoggedIn) {
                                     viewModel.toggleCollect(article)
                                 } else {
                                     onLoginClick()
@@ -143,6 +143,12 @@ fun ArticleItem(
     onCollectClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    // 关键优化：使用局部 Compose 状态来拦截并实现“瞬间变色”
+    // 当数据库真正更新导致 article 改变时，这个状态会自动对齐
+    var isCollectedLocal by remember(article.id, article.collect) { 
+        mutableStateOf(article.collect) 
+    }
+
     Card(
         modifier = modifier
             .padding(vertical = 5.dp)
@@ -176,12 +182,14 @@ fun ArticleItem(
                 }
             }
 
-            // 收藏按钮
-            IconButton(onClick = onCollectClick) {
+            IconButton(onClick = {
+                isCollectedLocal = !isCollectedLocal // 瞬间响应点击
+                onCollectClick()
+            }) {
                 Icon(
-                    imageVector = if (article.collect) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                    imageVector = if (isCollectedLocal) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
                     contentDescription = "Collect",
-                    tint = if (article.collect) Color.Red else MaterialTheme.colorScheme.outline
+                    tint = if (isCollectedLocal) Color.Red else MaterialTheme.colorScheme.outline
                 )
             }
         }
@@ -190,36 +198,12 @@ fun ArticleItem(
 
 private fun LazyListScope.renderAppendState(pagingItems: LazyPagingItems<Article>) {
     pagingItems.apply {
-        when (loadState.append) {
-            is LoadState.Loading -> {
-                item {
-                    Box(modifier = Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(modifier = Modifier.size(24.dp))
-                    }
+        if (loadState.append is LoadState.Loading) {
+            item {
+                Box(modifier = Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(modifier = Modifier.size(24.dp))
                 }
             }
-            is LoadState.Error -> {
-                item {
-                    ErrorMessage(
-                        message = "加载失败，请点击重试",
-                        onClickRetry = { retry() }
-                    )
-                }
-            }
-            else -> {}
-        }
-    }
-}
-
-@Composable
-fun ErrorMessage(message: String, onClickRetry: () -> Unit) {
-    Column(
-        modifier = Modifier.fillMaxWidth().padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(text = message, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
-        TextButton(onClick = onClickRetry) {
-            Text("重试")
         }
     }
 }
@@ -259,9 +243,7 @@ fun BannerPager(
                 model = request,
                 contentDescription = banner.title,
                 contentScale = ContentScale.Crop,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .clickable { onBannerClick(banner) }
+                modifier = Modifier.fillMaxSize().clickable { onBannerClick(banner) }
             )
         }
         val isDraggedState = pagerState.interactionSource.collectIsDraggedAsState()

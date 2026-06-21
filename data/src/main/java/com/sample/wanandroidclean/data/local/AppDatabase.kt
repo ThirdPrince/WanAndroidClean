@@ -18,7 +18,7 @@ import com.sample.wanandroidclean.data.local.entity.*
         ProjectRemoteKeys::class,
         ProjectChapterEntity::class
     ],
-    version = 8,
+    version = 9, // 将版本号从 8 升级到 9
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {

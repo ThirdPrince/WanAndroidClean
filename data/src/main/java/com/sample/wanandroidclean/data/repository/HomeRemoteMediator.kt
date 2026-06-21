@@ -35,7 +35,7 @@ class HomeRemoteMediator(
         }
 
         try {
-            // 1. 获取网络文章数据
+            // 1. 获取网络数据
             val response = api.getArticles(page)
             val articlesDto = response.data.datas
             
@@ -49,7 +49,6 @@ class HomeRemoteMediator(
             val endOfPaginationReached = articlesDto.isEmpty() || page >= response.data.pageCount
 
             database.withTransaction {
-                // 3. 如果是刷新，清理旧的文章及 Key 缓存
                 if (loadType == LoadType.REFRESH) {
                     database.remoteKeysDao().clearRemoteKeys()
                     database.articleDao().clearArticlesByCategoryId(0)
@@ -58,26 +57,21 @@ class HomeRemoteMediator(
                 val prevKey = if (page == 0) null else page - 1
                 val nextKey = if (endOfPaginationReached) null else page + 1
                 
-                // 4. 转换并持久化文章 (首页 categoryId = 0)
-                // 处理置顶文章 (page = -1 以确保排序在最前)
+                // 转换并持久化文章 (categoryId = 0)
+                // 关键点：将 DTO 中的 collect 状态保存到本地
                 val topEntities = topArticlesDto.mapIndexed { index, dto ->
                     ArticleEntity.fromDomain(dto.toDomain(isTop = true), 0, -1, index)
                 }
-                
-                // 处理普通文章
                 val articleEntities = articlesDto.mapIndexed { index, dto ->
                     ArticleEntity.fromDomain(dto.toDomain(isTop = false), 0, page, index)
                 }
 
                 val allEntities = topEntities + articleEntities
-                
-                // 保存分页状态 Key
                 val keys = allEntities.map {
                     HomeRemoteKeys(articleId = it.id, prevKey = prevKey, nextKey = nextKey)
                 }
+
                 database.remoteKeysDao().insertAll(keys)
-                
-                // 写入文章数据库，触发 UI 刷新
                 database.articleDao().insertAll(allEntities)
             }
             return MediatorResult.Success(endOfPaginationReached = endOfPaginationReached)

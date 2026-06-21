@@ -7,92 +7,87 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import okhttp3.Cookie
 import okhttp3.HttpUrl
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import java.util.concurrent.ConcurrentHashMap
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "cookie_prefs")
 
 /**
- * Optimized Cookie storage using DataStore with an in-memory cache.
+ * Optimized Cookie storage with an immediate in-memory StateFlow.
+ * Ensures UI can react to login status changes without any disk I/O delay.
  */
 class CookieStorage(
     private val context: Context,
     private val scope: CoroutineScope
 ) {
-
     private val cookieCache = ConcurrentHashMap<String, List<Cookie>>()
-
-    /**
-     * Exposes a Flow of all stored cookies across all hosts.
-     * Useful for observing login status.
-     */
-    val cookies: Flow<List<Cookie>> = context.dataStore.data.map { preferences ->
-        val allCookies = mutableListOf<Cookie>()
-        preferences.asMap().forEach { (key, value) ->
-            if (value is String) {
-                val host = key.name
-                val baseUrl = HttpUrl.Builder()
-                    .scheme("https")
-                    .host(host)
-                    .build()
-                value.split("|").forEach { cookieString ->
-                    Cookie.parse(baseUrl, cookieString)?.let { cookie -> 
-                        allCookies.add(cookie) // 修正：添加解析后的 cookie 对象而非原始字符串
-                    }
-                }
-            }
-        }
-        allCookies
-    }
+    
+    // 内存真值流：实现状态的毫秒级同步
+    private val _cookiesState = MutableStateFlow<List<Cookie>>(emptyList())
+    val cookies: Flow<List<Cookie>> = _cookiesState.asStateFlow()
 
     init {
-        // Pre-load cookies into memory from DataStore
         scope.launch {
             try {
                 val preferences = context.dataStore.data.first()
+                val allLoadedCookies = mutableListOf<Cookie>()
                 preferences.asMap().forEach { (key, value) ->
                     if (value is String) {
                         val host = key.name
-                        val baseUrl = HttpUrl.Builder()
-                            .scheme("https")
-                            .host(host)
-                            .build()
-                        val cookies = value.split("|").mapNotNull {
-                            Cookie.parse(baseUrl, it)
+                        val url = "https://$host/".toHttpUrlOrNull() ?: return@forEach
+                        val hostCookies = value.split("|").mapNotNull {
+                            Cookie.parse(url, it)
                         }
-                        cookieCache[host] = cookies
+                        cookieCache[host] = hostCookies
+                        allLoadedCookies.addAll(hostCookies)
                     }
                 }
-            } catch (e: Exception) {
-                // Handle potential errors during initialization
-            }
+                _cookiesState.value = allLoadedCookies
+            } catch (e: Exception) {}
         }
+    }
+
+    /**
+     * 同步返回内存中的 Cookie，用于 UserRepository 快速判断
+     */
+    fun hasLoginCookie(): Boolean {
+        return _cookiesState.value.any { it.name == "loginUserName" && it.value.isNotEmpty() }
     }
 
     fun saveCookies(url: HttpUrl, cookies: List<Cookie>) {
         val host = url.host
-        val currentCookies = cookieCache[host]?.toMutableList() ?: mutableListOf()
+        val currentHostCookies = cookieCache[host]?.toMutableList() ?: mutableListOf()
         
         cookies.forEach { newCookie ->
-            currentCookies.removeAll { it.name == newCookie.name }
-            currentCookies.add(newCookie)
+            currentHostCookies.removeAll { it.name == newCookie.name }
+            currentHostCookies.add(newCookie)
         }
         
-        cookieCache[host] = currentCookies
+        cookieCache[host] = currentHostCookies
+        
+        // 关键：立即更新内存流，触发 UI 刷新
+        _cookiesState.value = cookieCache.values.flatten()
 
         scope.launch {
             context.dataStore.edit { preferences ->
-                preferences[stringPreferencesKey(host)] = currentCookies.joinToString("|") { it.toString() }
+                preferences[stringPreferencesKey(host)] = currentHostCookies.joinToString("|") { it.toString() }
             }
         }
     }
 
     fun getCookies(url: HttpUrl): List<Cookie> {
         return cookieCache[url.host] ?: emptyList()
+    }
+
+    fun clearAll() {
+        cookieCache.clear()
+        _cookiesState.value = emptyList()
+        scope.launch {
+            context.dataStore.edit { it.clear() }
+        }
     }
 }

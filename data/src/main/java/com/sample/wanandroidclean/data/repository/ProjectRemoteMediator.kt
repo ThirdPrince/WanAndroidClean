@@ -22,7 +22,7 @@ class ProjectRemoteMediator(
         state: PagingState<Int, ArticleEntity>
     ): MediatorResult {
         val page = when (loadType) {
-            LoadType.REFRESH -> 1 // WanAndroid Project page starts from 1
+            LoadType.REFRESH -> 1
             LoadType.PREPEND -> return MediatorResult.Success(endOfPaginationReached = true)
             LoadType.APPEND -> {
                 val remoteKeys = getRemoteKeyForLastItem(state)
@@ -34,8 +34,8 @@ class ProjectRemoteMediator(
 
         try {
             val response = api.getProjectArticles(page, chapterId)
-            val articles = response.data.datas
-            val endOfPaginationReached = articles.isEmpty() || page >= response.data.pageCount
+            val articlesDto = response.data.datas
+            val endOfPaginationReached = articlesDto.isEmpty() || page >= response.data.pageCount
 
             database.withTransaction {
                 if (loadType == LoadType.REFRESH) {
@@ -44,12 +44,14 @@ class ProjectRemoteMediator(
                 }
                 val prevKey = if (page == 1) null else page - 1
                 val nextKey = if (endOfPaginationReached) null else page + 1
-                val keys = articles.map {
+                val keys = articlesDto.map {
                     ProjectRemoteKeys(articleId = it.id, categoryId = chapterId, prevKey = prevKey, nextKey = nextKey)
                 }
                 database.projectRemoteKeysDao().insertAll(keys)
-                database.articleDao().insertAll(articles.mapIndexed { index, articleDto ->
-                    ArticleEntity.fromDomain(articleDto.toDomain(), chapterId, page, index)
+                
+                // 修正：补全 categoryId (chapterId) 参数，并同步 collect 状态入库
+                database.articleDao().insertAll(articlesDto.mapIndexed { index, dto ->
+                    ArticleEntity.fromDomain(dto.toDomain(), chapterId, page, index)
                 })
             }
             return MediatorResult.Success(endOfPaginationReached = endOfPaginationReached)

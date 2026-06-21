@@ -12,11 +12,12 @@ interface ArticleDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(articles: List<ArticleEntity>)
 
-    /**
-     * Get articles for a specific category (0 for Home, chapterId for Wx/Project)
-     */
     @Query("SELECT * FROM articles WHERE categoryId = :categoryId ORDER BY page ASC, orderInPage ASC")
     fun getArticlesByCategoryId(categoryId: Int): PagingSource<Int, ArticleEntity>
+
+    // 关键：手动更新收藏状态，用于即时反馈高亮
+    @Query("UPDATE articles SET collect = :collect WHERE id = :articleId")
+    suspend fun updateCollectStatus(articleId: Int, collect: Boolean)
 
     @Query("DELETE FROM articles WHERE categoryId = :categoryId")
     suspend fun clearArticlesByCategoryId(categoryId: Int)
