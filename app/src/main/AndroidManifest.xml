@@ -3,7 +3,13 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.INTERNET" />
-
+    <queries>
+        <package android:name="com.daimajia.gold" />
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="juejin" />
+        </intent>
+    </queries>
     <application
         android:name=".WanAndroidApp"
         android:allowBackup="true"
@@ -16,6 +22,7 @@
         android:theme="@style/Theme.App.Starting"
         android:usesCleartextTraffic="true"
         tools:targetApi="m">
+
         <activity
             android:name=".MainActivity"
             android:exported="true"

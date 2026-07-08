@@ -1,5 +1,7 @@
 package com.sample.wanandroidclean.feature.mine
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -17,6 +19,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -41,9 +44,10 @@ fun MineScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val scrollState = rememberScrollState()
     val uriHandler = LocalUriHandler.current
+    val context = LocalContext.current // 获取 Context 用于跳转 App
 
     Box(modifier = Modifier.fillMaxSize().background(LightBg)) {
-        // 1. 顶部紫色圆角背景 (参考图中异形设计)
+        // 1. 顶部紫色圆角背景
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -76,10 +80,26 @@ fun MineScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // 5. “关于作者” 专属大卡片 (重点展示全干工程师身份)
+            // 5. “关于作者” 专属大卡片
             AuthorPromoCard(
                 onGithubClick = { uriHandler.openUri("https://github.com/ThirdPrince") },
-                onJuejinClick = { uriHandler.openUri("https://juejin.cn/user/2313028195058471") }
+                onJuejinClick = {
+                    val juejinUserId = "2313028195058471"
+                    val appUri = "juejin://user/$juejinUserId"
+                    val webUrl = "https://juejin.cn/user/$juejinUserId"
+
+                    try {
+                        // 优先尝试唤起掘金 App
+                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(appUri)).apply {
+                            setPackage("com.daimajia.gold")
+                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        }
+                        context.startActivity(intent)
+                    } catch (e: Exception) {
+                        // 如果没安装 App 或跳转失败，则打开网页
+                        uriHandler.openUri(webUrl)
+                    }
+                }
             )
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -110,7 +130,6 @@ fun UserInfoSection(userInfo: UserInfo?, onLoginClick: () -> Unit) {
             )
         }
         
-        // 圆形头像
         Surface(
             modifier = Modifier.size(64.dp),
             shape = CircleShape,
@@ -189,7 +208,6 @@ fun AuthorPromoCard(onGithubClick: () -> Unit, onJuejinClick: () -> Unit) {
         colors = CardDefaults.cardColors(containerColor = BrandPurple)
     ) {
         Box(modifier = Modifier.fillMaxWidth()) {
-            // 背景装饰大图标
             Icon(
                 imageVector = Icons.Default.Terminal,
                 contentDescription = null,
