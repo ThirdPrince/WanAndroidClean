@@ -94,4 +94,8 @@ class HomeRemoteMediator(
             }
         }
     }
+    override suspend fun initialize(): InitializeAction {
+        // 只有在数据失效或手动刷新时才刷新，切换页面不强制刷新
+        return InitializeAction.SKIP_INITIAL_REFRESH
+    }
 }
