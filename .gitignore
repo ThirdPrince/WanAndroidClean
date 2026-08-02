@@ -1,20 +1,28 @@
-*.iml
-.gradle
-/local.properties
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
-.DS_Store
-/build
-/captures
-.externalNativeBuild
-.cxx
+# Build output (covers root and every module: app, data, domain, feature/*)
+build/
+
+# Gradle
+.gradle/
+
+# Local configuration file (sdk path, etc)
 local.properties
 
-# Project exclude paths
-/data/build/
-/domain/build/
-/presentation/build/
+# IntelliJ / Android Studio
+*.iml
+.idea/caches
+.idea/libraries
+.idea/modules.xml
+.idea/workspace.xml
+.idea/navEditor.xml
+.idea/assetWizardSettings.xml
+
+# macOS
+.DS_Store
+
+# WorkBuddy assistant workspace data
+.workbuddy/
+
+# Native build artifacts
+.externalNativeBuild
+.cxx
+captures/
