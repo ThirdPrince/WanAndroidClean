@@ -1,0 +1,16 @@
+-- Merging decision tree log ---
+manifest
+ADDED from /Users/dhl/AndroidStudioProjects/WanAndroidClean/feature/project/build/intermediates/tmp/ProcessLibraryManifest/debug/tempAndroidManifest16593815805618992116.xml:2:13-83
+INJECTED from /Users/dhl/AndroidStudioProjects/WanAndroidClean/feature/project/build/intermediates/tmp/ProcessLibraryManifest/debug/tempAndroidManifest16593815805618992116.xml:2:13-83
+	package
+		INJECTED from /Users/dhl/AndroidStudioProjects/WanAndroidClean/feature/project/build/intermediates/tmp/ProcessLibraryManifest/debug/tempAndroidManifest16593815805618992116.xml
+	xmlns:android
+		ADDED from /Users/dhl/AndroidStudioProjects/WanAndroidClean/feature/project/build/intermediates/tmp/ProcessLibraryManifest/debug/tempAndroidManifest16593815805618992116.xml:2:23-81
+uses-sdk
+INJECTED from /Users/dhl/AndroidStudioProjects/WanAndroidClean/feature/project/build/intermediates/tmp/ProcessLibraryManifest/debug/tempAndroidManifest16593815805618992116.xml reason: use-sdk injection requested
+INJECTED from /Users/dhl/AndroidStudioProjects/WanAndroidClean/feature/project/build/intermediates/tmp/ProcessLibraryManifest/debug/tempAndroidManifest16593815805618992116.xml
+INJECTED from /Users/dhl/AndroidStudioProjects/WanAndroidClean/feature/project/build/intermediates/tmp/ProcessLibraryManifest/debug/tempAndroidManifest16593815805618992116.xml
+	android:targetSdkVersion
+		INJECTED from /Users/dhl/AndroidStudioProjects/WanAndroidClean/feature/project/build/intermediates/tmp/ProcessLibraryManifest/debug/tempAndroidManifest16593815805618992116.xml
+	android:minSdkVersion
+		INJECTED from /Users/dhl/AndroidStudioProjects/WanAndroidClean/feature/project/build/intermediates/tmp/ProcessLibraryManifest/debug/tempAndroidManifest16593815805618992116.xml

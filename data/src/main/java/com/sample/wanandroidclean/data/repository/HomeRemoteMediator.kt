@@ -57,8 +57,6 @@ class HomeRemoteMediator(
                 val prevKey = if (page == 0) null else page - 1
                 val nextKey = if (endOfPaginationReached) null else page + 1
                 
-                // 转换并持久化文章 (categoryId = 0)
-                // 关键点：将 DTO 中的 collect 状态保存到本地
                 val topEntities = topArticlesDto.mapIndexed { index, dto ->
                     ArticleEntity.fromDomain(dto.toDomain(isTop = true), 0, -1, index)
                 }
