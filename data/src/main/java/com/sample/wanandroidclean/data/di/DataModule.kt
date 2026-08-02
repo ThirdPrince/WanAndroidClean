@@ -7,6 +7,7 @@ import coil.memory.MemoryCache
 import coil.request.CachePolicy
 import com.sample.wanandroidclean.data.datasource.*
 import com.sample.wanandroidclean.data.local.AppDatabase
+import com.sample.wanandroidclean.data.local.dao.*
 import com.sample.wanandroidclean.data.remote.*
 import com.sample.wanandroidclean.data.repository.*
 import com.sample.wanandroidclean.domain.repository.*
@@ -25,7 +26,7 @@ import retrofit2.converter.kotlinx.serialization.asConverterFactory
 import java.io.File
 
 val dataModule = module {
-    // 1. Database & Dao
+    // 1. Database
     single {
         Room.databaseBuilder(
             androidContext(),
@@ -33,17 +34,20 @@ val dataModule = module {
             "wan_android_db"
         ).fallbackToDestructiveMigration().build()
     }
-    single { get<AppDatabase>().systemDao() }
-    single { get<AppDatabase>().navigationDao() }
-    single { get<AppDatabase>().articleDao() }
-    single { get<AppDatabase>().remoteKeysDao() }
-    single { get<AppDatabase>().bannerDao() }
-    single { get<AppDatabase>().wxRemoteKeysDao() }
-    single { get<AppDatabase>().wxChapterDao() }
-    single { get<AppDatabase>().projectChapterDao() }
-    single { get<AppDatabase>().projectRemoteKeysDao() }
 
-    // 2. DataSources
+    // 2. DAOs - 显式指定泛型类型，彻底解决不同编译器下的 Cannot infer type 报错
+    single<SystemDao> { get<AppDatabase>().systemDao() }
+    single<NavigationDao> { get<AppDatabase>().navigationDao() }
+    single<ArticleDao> { get<AppDatabase>().articleDao() }
+    single<HomeRemoteKeysDao> { get<AppDatabase>().remoteKeysDao() }
+    single<BannerDao> { get<AppDatabase>().bannerDao() }
+    single<WxRemoteKeysDao> { get<AppDatabase>().wxRemoteKeysDao() }
+    single<WxChapterDao> { get<AppDatabase>().wxChapterDao() }
+    single<ProjectChapterDao> { get<AppDatabase>().projectChapterDao() }
+    single<ProjectRemoteKeysDao> { get<AppDatabase>().projectRemoteKeysDao() }
+    single<UserInfoDao> { get<AppDatabase>().userInfoDao() }
+
+    // 3. DataSources
     single<SystemRemoteDataSource> { SystemRemoteDataSourceImpl(get()) }
     single<SystemLocalDataSource> { SystemLocalDataSourceImpl(get()) }
     single<NavigationRemoteDataSource> { NavigationRemoteDataSourceImpl(get()) }
@@ -54,8 +58,9 @@ val dataModule = module {
     single<WxRemoteDataSource> { WxRemoteDataSourceImpl(get()) }
     single<ProjectLocalDataSource> { ProjectLocalDataSourceImpl(get()) }
     single<ProjectRemoteDataSource> { ProjectRemoteDataSourceImpl(get()) }
+    single<UserInfoLocalDataSource> { UserInfoLocalDataSourceImpl(get()) }
 
-    // 3. Infrastructure
+    // 4. Infrastructure
     single { CoroutineScope(Dispatchers.IO + SupervisorJob()) }
     single { CookieStorage(androidContext(), get()) }
     single { PersistentCookieJar(get()) }
@@ -74,7 +79,7 @@ val dataModule = module {
             .build()
     }
 
-    // 4. Coil ImageLoader (实现强力离线缓存)
+    // 5. Coil ImageLoader (离线优先核心配置)
     single {
         ImageLoader.Builder(androidContext())
             .memoryCache { MemoryCache.Builder(androidContext()).maxSizePercent(0.25).build() }
@@ -92,7 +97,7 @@ val dataModule = module {
             .build()
     }
 
-    // 5. Repositories
+    // 6. Repositories - 补全所有参数注入
     single<ArticleRepository> { ArticleRepositoryImpl(get(), get()) }
     single<BannerRepository> { BannerRepositoryImpl(get(), get()) }
     single<TopArticleRepository> { TopArticleRepositoryImpl(get()) }
@@ -102,13 +107,10 @@ val dataModule = module {
     single<ProjectRepository> { ProjectRepositoryImpl(get(), get(), get(), get()) }
     single<UserInfoRepository> { UserInfoRepositoryImpl(get()) }
     single<UserRepository> { UserRepositoryImpl(get(), get()) }
-    // 修正：补全 2 个注入参数
     single<CollectionRepository> { CollectionRepositoryImpl(get(), get()) }
 
-    // 6. Network
-    single<WanAndroidApi> {
-        get<Retrofit>().create(WanAndroidApi::class.java)
-    }
+    // 7. Network
+    single<WanAndroidApi> { get<Retrofit>().create(WanAndroidApi::class.java) }
 
     single<Retrofit> {
         Retrofit.Builder()
@@ -118,9 +120,5 @@ val dataModule = module {
             .build()
     }
 
-    single {
-        Json {
-            ignoreUnknownKeys = true
-        }
-    }
+    single { Json { ignoreUnknownKeys = true } }
 }

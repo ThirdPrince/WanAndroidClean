@@ -29,11 +29,11 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sample.wanandroidclean.domain.entity.UserInfo
 import org.koin.androidx.compose.koinViewModel
 
-// 高级感配色
+// 定义符合图中质感的颜色
 val BrandPurple = Color(0xFF6200EE)
 val BrandGradient = Brush.verticalGradient(listOf(Color(0xFF7C4DFF), Color(0xFF6200EE)))
 val CardBackground = Color.White
-val LightBg = Color(0xFFF8F9FA)
+val SurfaceBg = Color(0xFFF6F7F9)
 
 @Composable
 fun MineScreen(
@@ -44,14 +44,14 @@ fun MineScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val scrollState = rememberScrollState()
     val uriHandler = LocalUriHandler.current
-    val context = LocalContext.current // 获取 Context 用于跳转 App
+    val context = LocalContext.current
 
-    Box(modifier = Modifier.fillMaxSize().background(LightBg)) {
-        // 1. 顶部紫色圆角背景
+    Box(modifier = Modifier.fillMaxSize().background(SurfaceBg)) {
+        // 1. 顶部紫色弧形背景 (参考图中异形设计)
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(240.dp)
+                .height(260.dp)
                 .clip(RoundedCornerShape(bottomStart = 50.dp, bottomEnd = 50.dp))
                 .background(BrandGradient)
         )
@@ -65,55 +65,51 @@ fun MineScreen(
         ) {
             Spacer(modifier = Modifier.height(60.dp))
 
-            // 头部：问候语 + 用户名 + 头像
-            UserInfoSection(uiState.userInfo, onLoginClick)
+            // 头部：Hello, Nickname + Avatar
+            MineTopHeader(uiState.userInfo, onLoginClick)
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // 3. 悬浮快捷卡片 (积分/收藏/消息)
-            QuickActionSection(uiState.userInfo, onCollectionClick)
+            // 3. 悬浮快捷功能卡片 (积分/收藏/通知)
+            QuickStatCard(uiState.userInfo, onCollectionClick)
 
             Spacer(modifier = Modifier.height(24.dp))
 
             // 4. 搜索框预览 (装饰用)
-            SimpleSearchBar()
+            SimpleSearchBox()
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // 5. “关于作者” 专属大卡片
-            AuthorPromoCard(
+            // 5. “关于作者” 专属全干工程师名片 (图中大卡片风格)
+            AuthorInfoCard(
                 onGithubClick = { uriHandler.openUri("https://github.com/ThirdPrince") },
                 onJuejinClick = {
-                    val juejinUserId = "2313028195058471"
-                    val appUri = "juejin://user/$juejinUserId"
-                    val webUrl = "https://juejin.cn/user/$juejinUserId"
-
-                    try {
-                        // 优先尝试唤起掘金 App
-                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(appUri)).apply {
-                            setPackage("com.daimajia.gold")
-                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                        }
-                        context.startActivity(intent)
-                    } catch (e: Exception) {
-                        // 如果没安装 App 或跳转失败，则打开网页
-                        uriHandler.openUri(webUrl)
+                    val juejinUrl = "https://juejin.cn/user/2313028195058471"
+                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(juejinUrl)).apply {
+                        setPackage("com.daimajia.gold") 
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                     }
+                    try { context.startActivity(intent) } catch (e: Exception) { uriHandler.openUri(juejinUrl) }
                 }
             )
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // 6. 网格功能菜单
-            MenuGridSection(viewModel)
+            // 6. 九宫格菜单
+            Text(
+                text = "常用功能",
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                modifier = Modifier.padding(start = 4.dp, bottom = 12.dp)
+            )
+            MenuGrid(viewModel)
 
-            Spacer(modifier = Modifier.height(120.dp))
+            Spacer(modifier = Modifier.height(100.dp))
         }
     }
 }
 
 @Composable
-fun UserInfoSection(userInfo: UserInfo?, onLoginClick: () -> Unit) {
+fun MineTopHeader(userInfo: UserInfo?, onLoginClick: () -> Unit) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
@@ -125,13 +121,13 @@ fun UserInfoSection(userInfo: UserInfo?, onLoginClick: () -> Unit) {
                 text = userInfo?.nickname ?: "点击登录",
                 color = Color.White,
                 fontWeight = FontWeight.ExtraBold,
-                fontSize = 24.sp,
+                fontSize = 26.sp,
                 modifier = if (userInfo == null) Modifier.clickable { onLoginClick() } else Modifier
             )
         }
         
         Surface(
-            modifier = Modifier.size(64.dp),
+            modifier = Modifier.size(68.dp),
             shape = CircleShape,
             color = Color.White.copy(alpha = 0.2f),
             border = BorderStroke(2.dp, Color.White)
@@ -139,7 +135,7 @@ fun UserInfoSection(userInfo: UserInfo?, onLoginClick: () -> Unit) {
             Icon(
                 imageVector = Icons.Default.Person,
                 contentDescription = null,
-                modifier = Modifier.padding(12.dp),
+                modifier = Modifier.padding(14.dp),
                 tint = Color.White
             )
         }
@@ -147,37 +143,37 @@ fun UserInfoSection(userInfo: UserInfo?, onLoginClick: () -> Unit) {
 }
 
 @Composable
-fun QuickActionSection(userInfo: UserInfo?, onCollectionClick: () -> Unit) {
+fun QuickStatCard(userInfo: UserInfo?, onCollectionClick: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = CardBackground),
-        elevation = CardDefaults.cardElevation(defaultElevation = 10.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
     ) {
         Row(
             modifier = Modifier.padding(vertical = 20.dp).fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            ActionItem(Icons.Default.Stars, "积分", userInfo?.coinCount?.toString() ?: "--")
-            ActionItem(Icons.Default.Favorite, "收藏", onClick = onCollectionClick)
-            ActionItem(Icons.Default.Notifications, "通知")
+            StatActionItem(Icons.Default.Stars, "积分", userInfo?.coinCount?.toString() ?: "--")
+            StatActionItem(Icons.Default.Favorite, "收藏", onClick = onCollectionClick)
+            StatActionItem(Icons.Default.Notifications, "消息")
         }
     }
 }
 
 @Composable
-fun ActionItem(icon: ImageVector, label: String, value: String? = null, onClick: () -> Unit = {}) {
+fun StatActionItem(icon: ImageVector, label: String, value: String? = null, onClick: () -> Unit = {}) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier.clickable { onClick() }
     ) {
         Box(
-            modifier = Modifier.size(50.dp).clip(CircleShape).background(BrandPurple.copy(alpha = 0.1f)),
+            modifier = Modifier.size(52.dp).clip(CircleShape).background(BrandPurple.copy(alpha = 0.1f)),
             contentAlignment = Alignment.Center
         ) {
             Icon(imageVector = icon, contentDescription = null, tint = BrandPurple)
         }
-        Spacer(modifier = Modifier.height(6.dp))
+        Spacer(modifier = Modifier.height(8.dp))
         Text(text = label, style = MaterialTheme.typography.labelMedium, color = Color.Gray)
         if (value != null) {
             Text(text = value, style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold))
@@ -186,7 +182,7 @@ fun ActionItem(icon: ImageVector, label: String, value: String? = null, onClick:
 }
 
 @Composable
-fun SimpleSearchBar() {
+fun SimpleSearchBox() {
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
@@ -194,59 +190,60 @@ fun SimpleSearchBar() {
         border = BorderStroke(1.dp, Color.LightGray.copy(alpha = 0.3f))
     ) {
         Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text(text = "Searching for...", color = Color.Gray.copy(alpha = 0.6f), modifier = Modifier.weight(1f))
+            Text(text = "Searching for...", color = Color.Gray.copy(alpha = 0.5f), modifier = Modifier.weight(1f))
             Icon(Icons.Default.Search, null, tint = Color.Gray)
         }
     }
 }
 
 @Composable
-fun AuthorPromoCard(onGithubClick: () -> Unit, onJuejinClick: () -> Unit) {
+fun AuthorInfoCard(onGithubClick: () -> Unit, onJuejinClick: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = BrandPurple)
     ) {
-        Box(modifier = Modifier.fillMaxWidth()) {
-            Icon(
-                imageVector = Icons.Default.Terminal,
-                contentDescription = null,
-                modifier = Modifier.size(150.dp).align(Alignment.BottomEnd).offset(x = 30.dp, y = 30.dp),
-                tint = Color.White.copy(alpha = 0.1f)
+        Column(modifier = Modifier.padding(24.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Surface(
+                    modifier = Modifier.size(44.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    color = Color.White.copy(alpha = 0.2f)
+                ) {
+                    Icon(Icons.Default.Terminal, null, tint = Color.White, modifier = Modifier.padding(10.dp))
+                }
+                Spacer(modifier = Modifier.width(12.dp))
+                Column {
+                    Text(text = "关于作者", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                    Text(text = "全干工程师 (Full-Stack)", color = Color.White.copy(alpha = 0.8f), fontSize = 12.sp)
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                text = "技术栈: Android / Java / iOS / 公众号 / Ktor",
+                color = Color.White,
+                style = MaterialTheme.typography.bodyMedium
             )
             
-            Column(modifier = Modifier.padding(24.dp)) {
-                Text(text = "全干工程师 (Full-Stack)", color = Color.White.copy(alpha = 0.8f), fontSize = 12.sp)
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(text = "关于作者", color = Color.White, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-                
-                Spacer(modifier = Modifier.height(16.dp))
-                
-                Text(
-                    text = "技术栈: Android / Java / iOS / 公众号 / Ktor",
-                    color = Color.White,
-                    style = MaterialTheme.typography.bodyMedium
-                )
-                
-                Spacer(modifier = Modifier.height(20.dp))
-                
-                Row {
-                    Button(
-                        onClick = onGithubClick,
-                        colors = ButtonDefaults.buttonColors(containerColor = Color.White),
-                        shape = RoundedCornerShape(12.dp),
-                        contentPadding = PaddingValues(horizontal = 16.dp)
-                    ) {
-                        Text("GitHub", color = BrandPurple, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                    }
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Button(
-                        onClick = onJuejinClick,
-                        colors = ButtonDefaults.buttonColors(containerColor = Color.White.copy(alpha = 0.2f)),
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Text("掘金", color = Color.White, fontSize = 12.sp)
-                    }
+            Spacer(modifier = Modifier.height(20.dp))
+            Row(modifier = Modifier.fillMaxWidth()) {
+                Button(
+                    onClick = onGithubClick,
+                    modifier = Modifier.weight(1f).height(42.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.White)
+                ) {
+                    Text("GitHub", color = BrandPurple, fontWeight = FontWeight.Bold)
+                }
+                Spacer(modifier = Modifier.width(12.dp))
+                Button(
+                    onClick = onJuejinClick,
+                    modifier = Modifier.weight(1f).height(42.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.White.copy(alpha = 0.2f))
+                ) {
+                    Text("掘金 App", color = Color.White)
                 }
             }
         }
@@ -254,10 +251,10 @@ fun AuthorPromoCard(onGithubClick: () -> Unit, onJuejinClick: () -> Unit) {
 }
 
 @Composable
-fun MenuGridSection(viewModel: MineViewModel) {
-    val menuItems = listOf(
-        Pair(Icons.Outlined.Share, "分享项目"),
-        Pair(Icons.Outlined.History, "最近阅读"),
+fun MenuGrid(viewModel: MineViewModel) {
+    val items = listOf(
+        Pair(Icons.Outlined.Share, "我的分享"),
+        Pair(Icons.Outlined.List, "最近阅读"),
         Pair(Icons.Outlined.Code, "开源项目"),
         Pair(Icons.Outlined.Info, "关于作者"),
         Pair(Icons.Outlined.BookmarkBorder, "稍后阅读"),
@@ -267,16 +264,16 @@ fun MenuGridSection(viewModel: MineViewModel) {
     )
 
     Column(modifier = Modifier.fillMaxWidth()) {
-        for (i in menuItems.indices step 4) {
+        for (i in items.indices step 4) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 for (j in 0 until 4) {
-                    if (i + j < menuItems.size) {
-                        val item = menuItems[i + j]
+                    if (i + j < items.size) {
+                        val item = items[i + j]
                         Box(modifier = Modifier.weight(1f)) {
-                            GridMenuItem(
+                            GridMenuIcon(
                                 icon = item.first, 
                                 label = item.second,
-                                onClick = { if(item.second == "退出登录") viewModel.logout() }
+                                onClick = { if (item.second == "退出登录") viewModel.logout() }
                             )
                         }
                     } else {
@@ -290,10 +287,10 @@ fun MenuGridSection(viewModel: MineViewModel) {
 }
 
 @Composable
-fun GridMenuItem(icon: ImageVector, label: String, onClick: () -> Unit = {}) {
+fun GridMenuIcon(icon: ImageVector, label: String, onClick: () -> Unit = {}) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.fillMaxWidth().clickable { onClick() }.padding(vertical = 8.dp)
+        modifier = Modifier.fillMaxWidth().clickable { onClick() }.padding(vertical = 4.dp)
     ) {
         Surface(
             modifier = Modifier.size(56.dp),
@@ -306,6 +303,6 @@ fun GridMenuItem(icon: ImageVector, label: String, onClick: () -> Unit = {}) {
             }
         }
         Spacer(modifier = Modifier.height(8.dp))
-        Text(text = label, fontSize = 12.sp, color = Color.DarkGray, textAlign = TextAlign.Center)
+        Text(text = label, fontSize = 11.sp, color = Color.DarkGray, textAlign = TextAlign.Center)
     }
 }

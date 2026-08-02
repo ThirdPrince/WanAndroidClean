@@ -16,9 +16,10 @@ import com.sample.wanandroidclean.data.local.entity.*
         WxRemoteKeys::class,
         WxChapterEntity::class,
         ProjectRemoteKeys::class,
-        ProjectChapterEntity::class
+        ProjectChapterEntity::class,
+        UserInfoEntity::class
     ],
-    version = 9, // 将版本号从 8 升级到 9
+    version = 10, // 统一升级到 10，确保所有人拉取后都会触发 destructive migration
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -31,4 +32,5 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun wxChapterDao(): WxChapterDao
     abstract fun projectRemoteKeysDao(): ProjectRemoteKeysDao
     abstract fun projectChapterDao(): ProjectChapterDao
+    abstract fun userInfoDao(): UserInfoDao
 }
